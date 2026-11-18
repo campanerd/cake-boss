@@ -1,0 +1,59 @@
+# ---- .NET build output ----
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userprefs
+*.log
+TestResults/
+publish/
+/packages/
+*.nupkg
+
+# ---- JetBrains Rider / IntelliJ / ReSharper ----
+.idea/
+*.iml
+riderModule.iml
+/_ReSharper.Caches/
+*.DotSettings.user
+
+# ---- Visual Studio / VS Code ----
+.vs/
+.vscode/
+
+# ---- Instrucoes locais do Claude (decisao dele: nao versionar) ----
+CLAUDE.md
+
+# ---- Segredos e configuracao local (NUNCA versionar) ----
+# Connection string do Supabase, chaves de API, credenciais do Google etc.
+# Em desenvolvimento use `dotnet user-secrets`; em producao use variaveis de ambiente.
+.env
+.env.*
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.Production.json
+secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
+# Chave JSON da service account do Google (Calendar)
+google-credentials*.json
+service-account*.json
+client_secret*.json
+
+# ---- Uploads locais de fotos de pedidos ----
+**/App_Data/
+**/uploads/
+
+# ---- Backups de banco (pg_dump) ----
+*.dump
+*.sql.bak
+backups/
+
+# ---- Sistema operacional ----
+.DS_Store
+Thumbs.db
+Desktop.ini
