@@ -51,6 +51,125 @@ namespace CakeBoss.Backend.Infrastructure.Data.Migrations
 
                     b.ToTable("Customers", (string)null);
                 });
+
+            modelBuilder.Entity("CakeBoss.Backend.Features.Schedule.OpeningHour", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<TimeOnly>("ClosesAt")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<TimeOnly>("OpensAt")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DayOfWeek")
+                        .IsUnique();
+
+                    b.ToTable("OpeningHours", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ClosesAt = new TimeOnly(20, 0, 0),
+                            DayOfWeek = 2,
+                            OpensAt = new TimeOnly(14, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ClosesAt = new TimeOnly(20, 0, 0),
+                            DayOfWeek = 3,
+                            OpensAt = new TimeOnly(14, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ClosesAt = new TimeOnly(20, 0, 0),
+                            DayOfWeek = 4,
+                            OpensAt = new TimeOnly(14, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 4,
+                            ClosesAt = new TimeOnly(20, 0, 0),
+                            DayOfWeek = 5,
+                            OpensAt = new TimeOnly(14, 0, 0)
+                        },
+                        new
+                        {
+                            Id = 5,
+                            ClosesAt = new TimeOnly(18, 0, 0),
+                            DayOfWeek = 6,
+                            OpensAt = new TimeOnly(8, 0, 0)
+                        });
+                });
+
+            modelBuilder.Entity("CakeBoss.Backend.Features.Schedule.ScheduleBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartDate", "EndDate");
+
+                    b.ToTable("ScheduleBlocks", (string)null);
+                });
+
+            modelBuilder.Entity("CakeBoss.Backend.Features.Schedule.ScheduleSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("MaxKgPerDay")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)");
+
+                    b.Property<int>("MinLeadDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SlotMinutes")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScheduleSettings", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            MaxKgPerDay = 20m,
+                            MinLeadDays = 3,
+                            SlotMinutes = 60
+                        });
+                });
 #pragma warning restore 612, 618
         }
     }
