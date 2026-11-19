@@ -1,7 +1,7 @@
 using CakeBoss.Backend.Features.Customers;
 using CakeBoss.Backend.Shared;
 
-namespace CakeBoss.Backend.Tests;
+namespace CakeBoss.Backend.Tests.Customers;
 
 public class CustomerTests
 {
