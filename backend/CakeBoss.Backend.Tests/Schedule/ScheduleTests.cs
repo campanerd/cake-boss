@@ -1,7 +1,7 @@
 using CakeBoss.Backend.Features.Schedule;
 using CakeBoss.Backend.Shared;
 
-namespace CakeBoss.Backend.Tests;
+namespace CakeBoss.Backend.Tests.Schedule;
 
 public class OpeningHourTests
 {
