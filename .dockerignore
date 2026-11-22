@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+.git
+.github
+.idea
+.vs
+.vscode
+backend/CakeBoss.Backend.Tests
+.env
+.env.*
+*.md
+LICENSE
+Dockerfile
+.dockerignore
+dotnet-tools.json
