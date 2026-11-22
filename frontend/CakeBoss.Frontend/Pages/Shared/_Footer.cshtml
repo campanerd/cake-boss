@@ -1,0 +1,43 @@
+@inject Microsoft.Extensions.Options.IOptions<CakeBoss.Frontend.Site.SiteOptions> SiteOptions
+@{
+    var site = SiteOptions.Value;
+}
+<footer class="site-footer" id="contato">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-5">
+                <p class="footer-brand">@site.Name</p>
+                <p class="footer-text">@site.Tagline</p>
+            </div>
+
+            <div class="col-sm-6 col-md-4">
+                <h2 class="footer-title">Atendimento</h2>
+                @if (!string.IsNullOrWhiteSpace(site.OpeningHours))
+                {
+                    <p class="footer-text">@site.OpeningHours</p>
+                }
+                <p class="footer-text small">Pedidos pelo site a qualquer hora. A confeiteira confirma cada um com você.</p>
+            </div>
+
+            <div class="col-sm-6 col-md-3">
+                <h2 class="footer-title">Fale com a gente</h2>
+                <ul class="footer-links">
+                    @if (site.WhatsAppLink is not null)
+                    {
+                        <li><a href="@site.WhatsAppLink" target="_blank" rel="noopener">WhatsApp</a></li>
+                    }
+                    @if (site.InstagramLink is not null)
+                    {
+                        <li><a href="@site.InstagramLink" target="_blank" rel="noopener">Instagram</a></li>
+                    }
+                    @if (site.WhatsAppLink is null && site.InstagramLink is null)
+                    {
+                        <li class="footer-text">Contatos em breve.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <p class="footer-copy">&copy; @DateTime.Now.Year @site.Name</p>
+    </div>
+</footer>

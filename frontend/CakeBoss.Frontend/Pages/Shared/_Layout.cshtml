@@ -1,52 +1,41 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@inject Microsoft.Extensions.Options.IOptions<CakeBoss.Frontend.Site.SiteOptions> SiteOptions
+@{
+    var site = SiteOptions.Value;
+    var pageTitle = ViewData["Title"] as string;
+    var title = string.IsNullOrWhiteSpace(pageTitle) ? site.Name : $"{pageTitle} · {site.Name}";
+    var description = ViewData["Description"] as string ?? site.Tagline;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - CakeBoss</title>
-    <script type="importmap"></script>
+    <meta name="description" content="@description" />
+    <meta name="theme-color" content="#F4D6CB" />
+    <title>@title</title>
+
+    @* Fontes: Lobster nos títulos (cursiva) e Nunito no texto (arredondada, fácil de ler no celular). *@
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" />
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/CakeBoss.Frontend.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">CakeBoss</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - CakeBoss - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
+    <partial name="_Header" />
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <main id="conteudo" class="site-main">
+        @RenderBody()
+    </main>
+
+    <partial name="_Footer" />
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
