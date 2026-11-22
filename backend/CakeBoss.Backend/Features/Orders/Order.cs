@@ -11,6 +11,7 @@ namespace CakeBoss.Backend.Features.Orders;
 public class Order
 {
     public const int MaxPhotos = 2;
+    public const int CodeLength = 8;
 
     /// <summary>Status que ocupam o horário na agenda. O índice único do banco usa a mesma lista.</summary>
     public static readonly OrderStatus[] SlotBlockingStatuses =
@@ -71,6 +72,20 @@ public class Order
     public decimal RemainingAmount => DepositPaidAt is null ? Total : Total - (DepositAmount ?? 0);
 
     /// <summary>
+    /// Deixa o código digitado pelo cliente no formato do banco (sem espaços, em maiúsculas).
+    /// Devolve null se não puder ser um código válido, sem precisar consultar o banco.
+    /// </summary>
+    public static string? NormalizeCode(string? code)
+    {
+        var normalized = code?.Trim().ToUpperInvariant();
+
+        if (normalized is null || normalized.Length != CodeLength || normalized.Any(c => !CodeAlphabet.Contains(c)))
+            return null;
+
+        return normalized;
+    }
+
+    /// <summary>
     /// Cria um pedido Pending. Não valida expediente, bloqueios, antecedência nem capacidade:
     /// isso depende da configuração da agenda e é feito pelo cálculo de disponibilidade antes de chamar aqui.
     /// </summary>
@@ -101,7 +116,7 @@ public class Order
         var order = new Order
         {
             Id = Guid.CreateVersion7(),
-            Code = RandomNumberGenerator.GetString(CodeAlphabet, 8),
+            Code = RandomNumberGenerator.GetString(CodeAlphabet, CodeLength),
             CustomerId = customer.Id,
             Customer = customer,
             Status = OrderStatus.Pending,

@@ -399,4 +399,37 @@ public class OrderTests
         order.SetGoogleEventId(null);
         Assert.Null(order.GoogleEventId);
     }
+
+    // ---------- Código público ----------
+
+    [Theory]
+    [InlineData("ABCD2345", "ABCD2345")]
+    [InlineData("abcd2345", "ABCD2345")]
+    [InlineData("  abcd2345  ", "ABCD2345")]
+    public void NormalizeCode_FixesCaseAndSpaces(string input, string expected)
+    {
+        Assert.Equal(expected, Order.NormalizeCode(input));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("ABC")]
+    [InlineData("ABCD234")]
+    [InlineData("ABCD23456")]
+    [InlineData("ABCD234O")] // O não existe no alfabeto dos códigos
+    [InlineData("ABCD 345")]
+    public void NormalizeCode_WithAnInvalidCode_ReturnsNull(string? input)
+    {
+        Assert.Null(Order.NormalizeCode(input));
+    }
+
+    [Fact]
+    public void NormalizeCode_AcceptsEveryGeneratedCode()
+    {
+        var order = TestData.NewOrder();
+
+        Assert.Equal(order.Code, Order.NormalizeCode(order.Code));
+    }
 }
