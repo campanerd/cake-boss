@@ -1,10 +1,12 @@
 using CakeBoss.Backend;
 using CakeBoss.Backend.Infrastructure.Health;
+using CakeBoss.Frontend.Site;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.Configure<SiteOptions>(builder.Configuration.GetSection(SiteOptions.Section));
 
 // A connection string do Supabase NUNCA vai para o repositório:
 //   desenvolvimento: dotnet user-secrets set "ConnectionStrings:Default" "<connection string>" --project frontend/CakeBoss.Frontend
