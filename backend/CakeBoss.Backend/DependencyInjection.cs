@@ -1,4 +1,5 @@
 using CakeBoss.Backend.Features.Availability;
+using CakeBoss.Backend.Features.Ordering;
 using CakeBoss.Backend.Infrastructure.Data;
 using CakeBoss.Backend.Infrastructure.Health;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ public static class DependencyInjection
 
         services.AddScoped<DatabaseHealth>();
         services.AddScoped<AvailabilityService>();
+        services.AddScoped<OrderService>();
 
         return services;
     }
