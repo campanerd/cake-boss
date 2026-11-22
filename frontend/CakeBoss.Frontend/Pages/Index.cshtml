@@ -1,10 +1,211 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Bolos personalizados";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+@* ---------- Apresentação ---------- *@
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 text-center text-lg-start">
+                <span class="eyebrow">Encomendas abertas</span>
+                <h1 class="hero-title">O bolo da sua festa, do jeito que você imaginou</h1>
+                <p class="lead">
+                    Escolha a massa, combine os recheios, conte o tema e reserve a data.
+                    A confeiteira confirma tudo com você pelo WhatsApp.
+                </p>
+                <div class="hero-actions">
+                    <a class="btn btn-cb btn-lg" href="#como-funciona">Quero encomendar</a>
+                    <a class="btn btn-cb-outline btn-lg" href="#sabores">Ver sabores</a>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="hero-art">
+                    @* Ilustração própria (SVG): as cores vêm das variáveis --cake-* do CSS. *@
+                    <svg class="cake-art" viewBox="0 0 420 380" role="img" aria-labelledby="hero-cake-title">
+                        <title id="hero-cake-title">Ilustração de um bolo de dois andares com morangos e uma vela</title>
+                        <ellipse cx="210" cy="342" rx="176" ry="24" fill="#e9d3c6" />
+                        <ellipse cx="210" cy="334" rx="176" ry="24" fill="#ffffff" />
+
+                        <rect x="78" y="212" width="264" height="116" rx="16" fill="var(--cake-frosting)" />
+                        <path d="M94 212h232a16 16 0 0 1 16 16v14H78v-14a16 16 0 0 1 16-16z" fill="var(--cake-drip)" />
+                        <rect x="100" y="232" width="16" height="30" rx="8" fill="var(--cake-drip)" />
+                        <rect x="136" y="232" width="16" height="18" rx="8" fill="var(--cake-drip)" />
+                        <rect x="170" y="232" width="16" height="40" rx="8" fill="var(--cake-drip)" />
+                        <rect x="206" y="232" width="16" height="24" rx="8" fill="var(--cake-drip)" />
+                        <rect x="242" y="232" width="16" height="34" rx="8" fill="var(--cake-drip)" />
+                        <rect x="276" y="232" width="16" height="20" rx="8" fill="var(--cake-drip)" />
+                        <rect x="308" y="232" width="16" height="28" rx="8" fill="var(--cake-drip)" />
+                        <g fill="var(--cake-accent)">
+                            <circle cx="100" cy="312" r="6" /><circle cx="128" cy="312" r="6" /><circle cx="156" cy="312" r="6" />
+                            <circle cx="184" cy="312" r="6" /><circle cx="212" cy="312" r="6" /><circle cx="240" cy="312" r="6" />
+                            <circle cx="268" cy="312" r="6" /><circle cx="296" cy="312" r="6" /><circle cx="322" cy="312" r="6" />
+                        </g>
+
+                        <rect x="128" y="120" width="164" height="96" rx="14" fill="var(--cake-frosting)" />
+                        <path d="M142 120h136a14 14 0 0 1 14 14v12H128v-12a14 14 0 0 1 14-14z" fill="var(--cake-drip)" />
+                        <rect x="146" y="138" width="14" height="24" rx="7" fill="var(--cake-drip)" />
+                        <rect x="178" y="138" width="14" height="34" rx="7" fill="var(--cake-drip)" />
+                        <rect x="210" y="138" width="14" height="18" rx="7" fill="var(--cake-drip)" />
+                        <rect x="242" y="138" width="14" height="28" rx="7" fill="var(--cake-drip)" />
+                        <rect x="266" y="138" width="14" height="20" rx="7" fill="var(--cake-drip)" />
+                        <g>
+                            <rect x="150" y="186" width="10" height="4" rx="2" fill="#f2c14e" transform="rotate(-25 155 188)" />
+                            <rect x="190" y="196" width="10" height="4" rx="2" fill="#8fc1a9" transform="rotate(30 195 198)" />
+                            <rect x="232" y="184" width="10" height="4" rx="2" fill="#e59a86" transform="rotate(-10 237 186)" />
+                            <rect x="262" y="198" width="10" height="4" rx="2" fill="#a7c4e5" transform="rotate(40 267 200)" />
+                            <rect x="118" y="276" width="10" height="4" rx="2" fill="#8fc1a9" transform="rotate(20 123 278)" />
+                            <rect x="182" y="290" width="10" height="4" rx="2" fill="#f2c14e" transform="rotate(-35 187 292)" />
+                            <rect x="250" y="280" width="10" height="4" rx="2" fill="#a7c4e5" transform="rotate(15 255 282)" />
+                            <rect x="300" y="290" width="10" height="4" rx="2" fill="#e59a86" transform="rotate(-20 305 292)" />
+                        </g>
+
+                        <g>
+                            <path d="M150 112c8-2 14 4 12 12-2 8-8 13-12 15-4-2-10-7-12-15-2-8 4-14 12-12z" fill="#e0505b" />
+                            <path d="M144 112l6-6 6 6-6 2z" fill="#6aa36f" />
+                            <path d="M270 112c8-2 14 4 12 12-2 8-8 13-12 15-4-2-10-7-12-15-2-8 4-14 12-12z" fill="#e0505b" />
+                            <path d="M264 112l6-6 6 6-6 2z" fill="#6aa36f" />
+                            <path d="M176 104c7-2 12 3 10 10-2 7-7 11-10 13-3-2-8-6-10-13-2-7 3-12 10-10z" fill="#e0505b" />
+                            <path d="M244 104c7-2 12 3 10 10-2 7-7 11-10 13-3-2-8-6-10-13-2-7 3-12 10-10z" fill="#e0505b" />
+                        </g>
+
+                        <rect x="204" y="62" width="12" height="56" rx="4" fill="#ffffff" />
+                        <path d="M204 72l12-6M204 86l12-6M204 100l12-6M204 114l12-6" stroke="var(--cake-accent)" stroke-width="3" />
+                        <path d="M210 30c8 10 10 18 0 26-10-8-8-16 0-26z" fill="#f6c453" />
+                        <path d="M210 40c4 6 5 10 0 14-5-4-4-8 0-14z" fill="#fff2c2" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ---------- Como funciona ---------- *@
+<section class="section" id="como-funciona">
+    <div class="container">
+        <h2 class="section-title">Como funciona</h2>
+        <p class="section-intro">Do pedido ao bolo pronto, em quatro passos.</p>
+
+        <ol class="row g-4 list-unstyled steps">
+            <li class="col-sm-6 col-lg-3">
+                <article class="step-card">
+                    <h3>Monte seu bolo</h3>
+                    <p>Massa, recheios (pode combinar), cobertura, tamanho em kg e o tema da decoração.</p>
+                </article>
+            </li>
+            <li class="col-sm-6 col-lg-3">
+                <article class="step-card">
+                    <h3>Escolha data e horário</h3>
+                    <p>Você só vê os horários livres, com pelo menos 3 dias de antecedência.</p>
+                </article>
+            </li>
+            <li class="col-sm-6 col-lg-3">
+                <article class="step-card">
+                    <h3>Combine os detalhes</h3>
+                    <p>A confeiteira chama você no WhatsApp para acertar o valor e o sinal.</p>
+                </article>
+            </li>
+            <li class="col-sm-6 col-lg-3">
+                <article class="step-card">
+                    <h3>Pague o sinal e pronto</h3>
+                    <p>O sinal é por Pix. O restante você paga na retirada ou na entrega.</p>
+                </article>
+            </li>
+        </ol>
+    </div>
+</section>
+
+@* ---------- Sabores (exemplo) ---------- *@
+<section class="section section-alt" id="sabores">
+    <div class="container">
+        <h2 class="section-title">Nossos sabores</h2>
+        <p class="section-intro">Monte o seu combinando uma massa, um ou mais recheios e a cobertura.</p>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <article class="flavor-card">
+                    <div class="flavor-card-art" aria-hidden="true">
+                        <svg viewBox="0 0 120 90">
+                            <path d="M10 62 100 34v22L10 84z" fill="#c98b5e" />
+                            <path d="M10 62 100 34v6L10 68z" fill="#f6e3c9" />
+                            <path d="M10 74 100 46v4L10 78z" fill="#f6e3c9" />
+                            <path d="M10 62 60 20l40 14z" fill="#fff6ee" />
+                        </svg>
+                    </div>
+                    <div class="flavor-card-body">
+                        <span class="flavor-card-label">Massas</span>
+                        <h3>A base do bolo</h3>
+                        <ul class="chips">
+                            <li>Chocolate</li><li>Baunilha</li><li>Red velvet</li><li>Cenoura</li><li>Coco</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-md-4">
+                <article class="flavor-card">
+                    <div class="flavor-card-art" aria-hidden="true">
+                        <svg viewBox="0 0 120 90">
+                            <path d="M14 40h92c0 26-20 42-46 42S14 66 14 40z" fill="#e59a86" />
+                            <ellipse cx="60" cy="40" rx="46" ry="10" fill="#7a4a3a" />
+                            <path d="M78 6l10 34" stroke="#c9b7a8" stroke-width="6" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="flavor-card-body">
+                        <span class="flavor-card-label">Recheios</span>
+                        <h3>Pode combinar</h3>
+                        <ul class="chips">
+                            <li>Brigadeiro</li><li>Ninho</li><li>Doce de leite</li><li>Frutas vermelhas</li><li>Maracujá</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-md-4">
+                <article class="flavor-card">
+                    <div class="flavor-card-art" aria-hidden="true">
+                        <svg viewBox="0 0 120 90">
+                            <path d="M30 50h60l-8 34H38z" fill="#e8907a" />
+                            <ellipse cx="60" cy="48" rx="34" ry="12" fill="#fff6ee" />
+                            <ellipse cx="60" cy="36" rx="26" ry="10" fill="#fff6ee" />
+                            <ellipse cx="60" cy="25" rx="17" ry="8" fill="#fff6ee" />
+                            <circle cx="60" cy="14" r="6" fill="#e0505b" />
+                        </svg>
+                    </div>
+                    <div class="flavor-card-body">
+                        <span class="flavor-card-label">Coberturas</span>
+                        <h3>O toque final</h3>
+                        <ul class="chips">
+                            <li>Chantilly</li><li>Ganache</li><li>Buttercream</li><li>Pasta americana</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <p class="sample-note">Sabores de exemplo: o cardápio da casa entra em breve.</p>
+    </div>
+</section>
+
+@* ---------- Informações rápidas ---------- *@
+<section class="section">
+    <div class="container">
+        <ul class="info-strip">
+            <li><strong>Antecedência</strong> Pedidos com pelo menos 3 dias de antecedência.</li>
+            <li><strong>Retirada ou entrega</strong> A taxa de entrega é combinada pela distância.</li>
+            <li><strong>Sinal por Pix</strong> Combinado com a confeiteira depois do pedido.</li>
+            <li><strong>Foto de referência</strong> Você pode mandar até 2 fotos do bolo que imaginou.</li>
+        </ul>
+    </div>
+</section>
+
+@* ---------- Chamada final ---------- *@
+<section class="cta-band scallop-top">
+    <div class="container">
+        <h2>Tem uma ideia de bolo?</h2>
+        <p>Conte para a gente o tema e a data da festa. A confeiteira responde e combina os detalhes com você.</p>
+        <a class="btn btn-cb-outline btn-lg" href="#como-funciona">Ver como encomendar</a>
+    </div>
+</section>

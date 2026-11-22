@@ -1,0 +1,32 @@
+@inject Microsoft.Extensions.Options.IOptions<CakeBoss.Frontend.Site.SiteOptions> SiteOptions
+@{
+    var site = SiteOptions.Value;
+}
+<header class="site-header scallop-bottom">
+    <nav class="navbar navbar-expand-lg" aria-label="Menu principal">
+        <div class="container">
+            <a class="brand" asp-page="/Index">
+                <span class="brand-name">@site.Name</span>
+                @if (!string.IsNullOrWhiteSpace(site.Tagline))
+                {
+                    <span class="brand-tagline">@site.Tagline</span>
+                }
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
+                    aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menu-principal">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" asp-page="/Index">Início</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#sabores">Sabores</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#como-funciona">Como funciona</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
+                </ul>
+                <a class="btn btn-cb ms-lg-4 mt-3 mt-lg-0" href="/#como-funciona">Encomendar</a>
+            </div>
+        </div>
+    </nav>
+</header>
