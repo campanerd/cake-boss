@@ -39,12 +39,23 @@ public class AvailabilityService(AppDbContext db, TimeProvider clock)
         decimal requestedKg = 0,
         CancellationToken ct = default)
     {
+        var days = await GetFreeDaysAsync(from, to, requestedKg, ct);
+        return days.Select(d => d.Date).ToList();
+    }
+
+    /// <summary>Dias livres do intervalo com os horários de cada um, para o calendário do formulário.</summary>
+    public async Task<IReadOnlyList<AvailableDay>> GetFreeDaysAsync(
+        DateOnly from,
+        DateOnly to,
+        decimal requestedKg = 0,
+        CancellationToken ct = default)
+    {
         if (to < from) return [];
         if (to.DayNumber - from.DayNumber > MaxDaysPerQuery)
             throw new ArgumentOutOfRangeException(nameof(to), $"Consulte no máximo {MaxDaysPerQuery} dias por vez.");
 
         var input = await LoadAsync(from, to, ct);
-        return AvailabilityCalculator.DaysWithFreeTimes(input, from, to, requestedKg);
+        return AvailabilityCalculator.FreeDays(input, from, to, requestedKg);
     }
 
     private DateTime LocalNow() => TimeZoneInfo.ConvertTime(clock.GetUtcNow(), BrazilTimeZone.Value).DateTime;

@@ -157,6 +157,22 @@ public class AvailabilityServiceTests
     }
 
     [PostgresFact]
+    public async Task FreeDays_ReturnsTimesAndRespectsTheRequestedWeight()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        database.Db.Orders.Add(NewOrder(Tuesday, 15, OrderStatus.Approved, weights: [18m]));
+        await database.Db.SaveChangesAsync();
+        var service = CreateService(database);
+
+        var anyWeight = await service.GetFreeDaysAsync(Tuesday, Wednesday);
+        var heavy = await service.GetFreeDaysAsync(Tuesday, Wednesday, requestedKg: 5m);
+
+        Assert.Equal(new[] { Tuesday, Wednesday }, anyWeight.Select(d => d.Date));
+        Assert.Equal(Hours(14, 16, 17, 18, 19), anyWeight[0].Times);
+        Assert.Equal(Wednesday, Assert.Single(heavy).Date);
+    }
+
+    [PostgresFact]
     public async Task Today_UsesBrasiliaTimeInsteadOfUtc()
     {
         await using var database = await TestDatabase.CreateAsync();

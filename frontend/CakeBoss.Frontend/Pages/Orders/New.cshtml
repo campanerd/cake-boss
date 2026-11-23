@@ -130,9 +130,25 @@
                     </div>
                 </fieldset>
 
-                <fieldset class="form-card">
+                <fieldset class="form-card" data-schedule data-slots-url="@Url.Page("/Orders/New", "Slots")">
                     <legend>Data e horário</legend>
-                    <div class="row g-3">
+
+                    @* Calendário com os dias e horários livres. Começa escondido: o JavaScript o mostra quando a agenda carrega. *@
+                    <div class="schedule-picker" data-schedule-picker hidden>
+                        <p class="schedule-status" data-schedule-status aria-live="polite"></p>
+                        <div class="calendar" data-calendar>
+                            <div class="calendar-head">
+                                <button type="button" class="calendar-nav" data-month="-1" aria-label="Mês anterior">&lsaquo;</button>
+                                <span class="calendar-title" data-month-title></span>
+                                <button type="button" class="calendar-nav" data-month="1" aria-label="Próximo mês">&rsaquo;</button>
+                            </div>
+                            <div class="calendar-grid" data-calendar-grid></div>
+                        </div>
+                        <div class="time-list" data-times></div>
+                    </div>
+
+                    @* Sem JavaScript (ou se a agenda não carregar) ficam os campos comuns; o servidor confere do mesmo jeito. *@
+                    <div class="row g-3" data-schedule-fallback>
                         <div class="col-sm-6">
                             <label asp-for="Form.Date" class="form-label">Data</label>
                             <input asp-for="Form.Date" type="date" class="form-control" required />
@@ -198,3 +214,10 @@
         }
     </div>
 </section>
+
+@section Scripts {
+    @if (Model.Enabled)
+    {
+        <script src="~/js/order-schedule.js" asp-append-version="true"></script>
+    }
+}

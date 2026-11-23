@@ -148,4 +148,19 @@ public class OrderFormTests
         Assert.Equal(DeliveryType.Pickup, form.DeliveryType);
         Assert.Equal(PaymentMethod.Pix, form.PaymentMethod);
     }
+
+    // O calendário usa a mesma leitura do peso para consultar os dias livres.
+    [Theory]
+    [InlineData("2,5", true, 2.5)]
+    [InlineData("2.5", true, 2.5)]
+    [InlineData("", false, 0)]
+    [InlineData(null, false, 0)]
+    [InlineData("abc", false, 0)]
+    public void TryParseWeight_AcceptsCommaOrDot(string? text, bool expectedOk, double expected)
+    {
+        var ok = OrderForm.TryParseWeight(text, out var weight);
+
+        Assert.Equal(expectedOk, ok);
+        Assert.Equal((decimal)expected, weight);
+    }
 }

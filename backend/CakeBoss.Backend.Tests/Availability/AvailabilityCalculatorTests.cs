@@ -267,4 +267,38 @@ public class AvailabilityCalculatorTests
     {
         Assert.Empty(AvailabilityCalculator.DaysWithFreeTimes(Input(), Sunday, Monday));
     }
+
+    // ---------- Dias com os horários (calendário do formulário) ----------
+
+    [Fact]
+    public void FreeDays_ReturnsEachFreeDayWithItsTimes()
+    {
+        var input = Input(occupied: [Occupy(Tuesday, 15)]);
+
+        var days = AvailabilityCalculator.FreeDays(input, Monday, Wednesday);
+
+        Assert.Equal(new[] { Tuesday, Wednesday }, days.Select(d => d.Date));
+        Assert.Equal(Hours(14, 16, 17, 18, 19), days[0].Times);
+        Assert.Equal(Hours(14, 15, 16, 17, 18, 19), days[1].Times);
+    }
+
+    [Fact]
+    public void FreeDays_LeavesOutDaysThatCannotHoldTheRequestedWeight()
+    {
+        var input = Input(occupied: [Occupy(Tuesday, 14, 18m)]);
+
+        var days = AvailabilityCalculator.FreeDays(input, Tuesday, Wednesday, requestedKg: 3m);
+
+        Assert.Equal(Wednesday, Assert.Single(days).Date);
+    }
+
+    [Fact]
+    public void FreeDays_MatchesDaysWithFreeTimes()
+    {
+        var input = Input(blocks: [ScheduleBlock.Create(Thursday, Thursday)], occupied: [Occupy(Friday, 14, 20m)]);
+
+        var days = AvailabilityCalculator.FreeDays(input, Monday, NextMonday);
+
+        Assert.Equal(AvailabilityCalculator.DaysWithFreeTimes(input, Monday, NextMonday), days.Select(d => d.Date));
+    }
 }
