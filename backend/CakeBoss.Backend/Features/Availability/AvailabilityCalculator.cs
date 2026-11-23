@@ -54,14 +54,26 @@ public static class AvailabilityCalculator
         AvailabilityInput input,
         DateOnly from,
         DateOnly to,
+        decimal requestedKg = 0) =>
+        FreeDays(input, from, to, requestedKg).Select(d => d.Date).ToList();
+
+    /// <summary>
+    /// Dias do intervalo (inclusive) que ainda têm horário livre, cada um com os seus horários.
+    /// É o que o formulário usa: o cliente só vê o que pode escolher para o peso informado.
+    /// </summary>
+    public static IReadOnlyList<AvailableDay> FreeDays(
+        AvailabilityInput input,
+        DateOnly from,
+        DateOnly to,
         decimal requestedKg = 0)
     {
-        var days = new List<DateOnly>();
+        var days = new List<AvailableDay>();
 
         for (var day = from; day <= to; day = day.AddDays(1))
         {
-            if (FreeTimes(input, day, requestedKg).Count > 0)
-                days.Add(day);
+            var times = FreeTimes(input, day, requestedKg);
+            if (times.Count > 0)
+                days.Add(new AvailableDay(day, times));
         }
 
         return days;
