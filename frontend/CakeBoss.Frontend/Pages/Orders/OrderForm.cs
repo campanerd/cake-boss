@@ -66,11 +66,17 @@ public sealed class OrderForm
             []);
     }
 
+    /// <summary>Lê o peso como o cliente digita: "2,5" ou "2.5".</summary>
+    public static bool TryParseWeight(string? text, out decimal weight) =>
+        decimal.TryParse(
+            text?.Trim().Replace(',', '.'),
+            NumberStyles.Number,
+            CultureInfo.InvariantCulture,
+            out weight);
+
     private decimal ParseWeight()
     {
-        var text = WeightKg?.Trim().Replace(',', '.');
-
-        if (!decimal.TryParse(text, NumberStyles.Number, CultureInfo.InvariantCulture, out var weight))
+        if (!TryParseWeight(WeightKg, out var weight))
             throw new DomainException("Informe o tamanho do bolo em kg (por exemplo, 2,5).");
 
         return weight;

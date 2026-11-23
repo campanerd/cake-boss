@@ -693,6 +693,114 @@ svg {
     padding-left: 1.1rem;
 }
 
+/* Calendário de dias e horários livres (desenhado pelo order-schedule.js). */
+.schedule-status {
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    color: var(--cb-chocolate-soft);
+}
+
+.calendar {
+    max-width: 22rem;
+    margin: 0 auto 1.25rem;
+}
+
+.calendar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.calendar-title {
+    font-weight: 800;
+}
+
+.calendar-nav {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--cb-rose);
+    background: #fff;
+    border: 1px solid var(--cb-line);
+    border-radius: 50%;
+}
+
+.calendar-nav:disabled {
+    opacity: 0.35;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.3rem;
+    text-align: center;
+}
+
+.calendar-weekday {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--cb-rose);
+}
+
+.calendar-day {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    font-weight: 700;
+    color: var(--cb-chocolate);
+    background: #fff;
+    border: 2px solid var(--cb-line);
+    border-radius: 50%;
+}
+
+.calendar-day.is-empty {
+    visibility: hidden;
+}
+
+/* Dia sem horário livre: só o número, apagado. */
+.calendar-day.is-off {
+    font-weight: 400;
+    color: var(--cb-chocolate-soft);
+    background: transparent;
+    border-color: transparent;
+    opacity: 0.45;
+}
+
+button.calendar-day:hover,
+.time-option:hover {
+    border-color: var(--cb-coral);
+}
+
+.calendar-day[aria-pressed="true"],
+.time-option[aria-pressed="true"] {
+    color: #fff;
+    background: var(--cb-coral-strong);
+    border-color: var(--cb-coral-strong);
+}
+
+.time-title {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.time-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.time-option {
+    min-width: 4.75rem;
+    padding: 0.5rem 0.9rem;
+    font-weight: 700;
+    color: var(--cb-chocolate);
+    background: #fff;
+    border: 2px solid var(--cb-line);
+    border-radius: 999px;
+}
+
 /* Confirmação do pedido. */
 .order-code {
     display: inline-block;
