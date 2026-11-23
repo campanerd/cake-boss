@@ -1,0 +1,200 @@
+@page "/pedido"
+@using CakeBoss.Backend.Features.Orders
+@using CakeBoss.Frontend.Site
+@model NewModel
+@{
+    ViewData["Title"] = "Fazer pedido";
+    ViewData["Description"] = "Monte o seu bolo e escolha a data: a confeiteira confirma tudo com você pelo WhatsApp.";
+}
+
+<section class="section">
+    <div class="container">
+        <header class="page-head">
+            <h1>Faça o seu pedido</h1>
+            <p>Conte como você quer o bolo. Depois a confeiteira chama você no WhatsApp para combinar o valor e o sinal.</p>
+        </header>
+
+        @if (!Model.Enabled)
+        {
+            <div class="form-card text-center order-form">
+                <h2>Pedidos pelo site abrem em breve</h2>
+                <p>Estamos finalizando os últimos detalhes.
+                    @if (Model.Site.WhatsAppLink is not null)
+                    {
+                        <text>Enquanto isso, fale com a gente pelo WhatsApp.</text>
+                    }
+                </p>
+                @if (Model.Site.WhatsAppLink is not null)
+                {
+                    <a class="btn btn-cb" href="@Model.Site.WhatsAppLink" target="_blank" rel="noopener">Chamar no WhatsApp</a>
+                }
+                else
+                {
+                    <a class="btn btn-cb" asp-page="/Index">Voltar ao início</a>
+                }
+            </div>
+        }
+        else
+        {
+            <form method="post" class="order-form" novalidate>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                @* Campo-armadilha para robôs: escondido por CSS, a pessoa nunca o preenche. *@
+                <div class="hp" aria-hidden="true">
+                    <label>Não preencha este campo
+                        <input asp-for="Form.Website" tabindex="-1" autocomplete="off" />
+                    </label>
+                </div>
+
+                <fieldset class="form-card">
+                    <legend>Seus dados</legend>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label asp-for="Form.CustomerName" class="form-label">Nome</label>
+                            <input asp-for="Form.CustomerName" class="form-control" maxlength="120" autocomplete="name" required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Form.CustomerPhone" class="form-label">Telefone (WhatsApp)</label>
+                            <input asp-for="Form.CustomerPhone" class="form-control" type="tel" inputmode="tel" maxlength="20"
+                                   autocomplete="tel" placeholder="(11) 91234-5678" required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Form.CustomerEmail" class="form-label">E-mail <span class="form-hint">(opcional)</span></label>
+                            <input asp-for="Form.CustomerEmail" class="form-control" type="email" maxlength="200" autocomplete="email" />
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-card">
+                    <legend>O bolo</legend>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="Form.Batter" class="form-label">Sabor da massa</label>
+                            <input asp-for="Form.Batter" class="form-control" list="lista-massas" maxlength="100" required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Form.Frosting" class="form-label">Cobertura</label>
+                            <input asp-for="Form.Frosting" class="form-control" list="lista-coberturas" maxlength="100" required />
+                        </div>
+
+                        <div class="col-12">
+                            <span class="form-label d-block">Recheio <span class="form-hint">(pode combinar até 3)</span></span>
+                            <div class="row g-2">
+                                <div class="col-sm-4">
+                                    <input asp-for="Form.Filling1" class="form-control" list="lista-recheios" maxlength="100"
+                                           aria-label="Recheio 1" placeholder="Recheio 1" required />
+                                </div>
+                                <div class="col-sm-4">
+                                    <input asp-for="Form.Filling2" class="form-control" list="lista-recheios" maxlength="100"
+                                           aria-label="Recheio 2 (opcional)" placeholder="Recheio 2 (opcional)" />
+                                </div>
+                                <div class="col-sm-4">
+                                    <input asp-for="Form.Filling3" class="form-control" list="lista-recheios" maxlength="100"
+                                           aria-label="Recheio 3 (opcional)" placeholder="Recheio 3 (opcional)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <label asp-for="Form.WeightKg" class="form-label">Tamanho (kg)</label>
+                            <input asp-for="Form.WeightKg" class="form-control" inputmode="decimal" maxlength="6"
+                                   placeholder="Ex.: 2,5" required />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Form.Decoration" class="form-label">Decoração</label>
+                            <textarea asp-for="Form.Decoration" class="form-control" rows="3" maxlength="1000"
+                                      placeholder="Tema, cores e o que escrever no bolo" required></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-card">
+                    <legend>Retirada ou entrega</legend>
+                    <div class="choice-group mb-3">
+                        <label class="choice" for="delivery-pickup">
+                            <input class="form-check-input" type="radio" id="delivery-pickup" name="Form.DeliveryType"
+                                   value="@DeliveryType.Pickup" checked="@(Model.Form.DeliveryType == DeliveryType.Pickup)" />
+                            <span>@FormOptions.DeliveryLabel(DeliveryType.Pickup)</span>
+                        </label>
+                        <label class="choice" for="delivery-delivery">
+                            <input class="form-check-input" type="radio" id="delivery-delivery" name="Form.DeliveryType"
+                                   value="@DeliveryType.Delivery" checked="@(Model.Form.DeliveryType == DeliveryType.Delivery)" />
+                            <span>@FormOptions.DeliveryLabel(DeliveryType.Delivery)</span>
+                        </label>
+                    </div>
+
+                    <div class="address-field">
+                        <label asp-for="Form.DeliveryAddress" class="form-label">Endereço de entrega</label>
+                        <input asp-for="Form.DeliveryAddress" class="form-control" maxlength="300" autocomplete="street-address" />
+                        <p class="form-hint mt-1 mb-0">A taxa de entrega é combinada pela distância.</p>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-card">
+                    <legend>Data e horário</legend>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="Form.Date" class="form-label">Data</label>
+                            <input asp-for="Form.Date" type="date" class="form-control" required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Form.Time" class="form-label">Horário</label>
+                            <input asp-for="Form.Time" type="time" class="form-control" step="3600" required />
+                        </div>
+                    </div>
+                    <p class="form-hint mt-2 mb-0">
+                        Pedidos com pelo menos 3 dias de antecedência, em horários cheios (de hora em hora).
+                        @if (!string.IsNullOrWhiteSpace(Model.Site.OpeningHours))
+                        {
+                            <text>Atendimento: @Model.Site.OpeningHours.</text>
+                        }
+                    </p>
+                </fieldset>
+
+                <fieldset class="form-card">
+                    <legend>Para finalizar</legend>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="Form.PaymentMethod" class="form-label">Como pretende pagar o restante</label>
+                            <select asp-for="Form.PaymentMethod" class="form-select">
+                                <option value="@PaymentMethod.Pix">@FormOptions.PaymentLabel(PaymentMethod.Pix)</option>
+                                <option value="@PaymentMethod.Cash">@FormOptions.PaymentLabel(PaymentMethod.Cash)</option>
+                                <option value="@PaymentMethod.Card">@FormOptions.PaymentLabel(PaymentMethod.Card)</option>
+                            </select>
+                            <p class="form-hint mt-1 mb-0">O sinal é combinado com a confeiteira e pago por Pix.</p>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Form.Notes" class="form-label">Observações <span class="form-hint">(opcional)</span></label>
+                            <textarea asp-for="Form.Notes" class="form-control" rows="2" maxlength="1000"
+                                      placeholder="Alergias, restrições ou qualquer detalhe importante"></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-cb btn-lg">Enviar pedido</button>
+                    <p class="form-hint mt-3">O pedido só vale depois que a confeiteira confirmar com você.</p>
+                </div>
+            </form>
+
+            <datalist id="lista-massas">
+                @foreach (var option in FormOptions.Batters)
+                {
+                    <option value="@option"></option>
+                }
+            </datalist>
+            <datalist id="lista-recheios">
+                @foreach (var option in FormOptions.Fillings)
+                {
+                    <option value="@option"></option>
+                }
+            </datalist>
+            <datalist id="lista-coberturas">
+                @foreach (var option in FormOptions.Frostings)
+                {
+                    <option value="@option"></option>
+                }
+            </datalist>
+        }
+    </div>
+</section>
