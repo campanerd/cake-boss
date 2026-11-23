@@ -1,9 +1,12 @@
 @page "/pedido/enviado/{code}"
-@using CakeBoss.Frontend.Site
 @model ConfirmationModel
 @{
     ViewData["Title"] = "Pedido enviado";
     var order = Model.Order!;
+}
+
+@section Head {
+    <meta name="robots" content="noindex" />
 }
 
 <section class="section">
@@ -17,39 +20,11 @@
             <div class="form-card text-center">
                 <p class="mb-2">O código do seu pedido</p>
                 <p class="order-code">@order.Code</p>
-                <p class="form-hint mb-0">Guarde este código: com ele você acompanha o pedido.</p>
+                <p class="form-hint mb-3">Guarde este código: com ele você acompanha o pedido.</p>
+                <a class="btn btn-cb" asp-page="Track" asp-route-code="@order.Code">Acompanhar pedido</a>
             </div>
 
-            <div class="form-card">
-                <h2>Resumo</h2>
-                <dl class="summary-list">
-                    <dt>Data e horário</dt>
-                    <dd>@FormOptions.FormatDate(order.Date) às @order.Time.ToString("HH:mm")</dd>
-
-                    <dt>@FormOptions.DeliveryLabel(order.DeliveryType)</dt>
-                    <dd>@(order.DeliveryAddress ?? "Você retira na confeitaria")</dd>
-
-                    @foreach (var item in order.Items)
-                    {
-                        <dt>Bolo</dt>
-                        <dd>
-                            Massa de @item.Batter, recheio de @string.Join(" e ", item.Fillings), cobertura de @item.Frosting,
-                            @item.WeightKg.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') kg.
-                            <br />
-                            <span class="form-hint">@item.Decoration</span>
-                        </dd>
-                    }
-
-                    <dt>Pagamento do restante</dt>
-                    <dd>@FormOptions.PaymentLabel(order.PaymentMethod)</dd>
-
-                    @if (!string.IsNullOrWhiteSpace(order.Notes))
-                    {
-                        <dt>Observações</dt>
-                        <dd>@order.Notes</dd>
-                    }
-                </dl>
-            </div>
+            <partial name="_OrderSummary" model="order" />
 
             <div class="text-center">
                 @if (Model.Site.WhatsAppLink is not null)

@@ -26,6 +26,10 @@
                     <li class="nav-item"><a class="nav-link" asp-page="/Index">Início</a></li>
                     <li class="nav-item"><a class="nav-link" href="/#sabores">Sabores</a></li>
                     <li class="nav-item"><a class="nav-link" href="/#como-funciona">Como funciona</a></li>
+                    @if (site.OrdersEnabled)
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-page="/Orders/Track" asp-route-code="">Meu pedido</a></li>
+                    }
                     <li class="nav-item"><a class="nav-link" href="#contato">Contato</a></li>
                 </ul>
                 <a class="btn btn-cb ms-lg-4 mt-3 mt-lg-0" href="@orderUrl">Encomendar</a>

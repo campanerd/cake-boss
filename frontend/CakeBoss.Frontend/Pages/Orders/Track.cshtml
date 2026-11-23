@@ -1,0 +1,112 @@
+@page "/acompanhar/{code?}"
+@using CakeBoss.Backend.Features.Orders
+@using CakeBoss.Frontend.Site
+@model TrackModel
+@{
+    var order = Model.Order;
+    ViewData["Title"] = order is null ? "Acompanhar pedido" : $"Pedido {order.Code}";
+}
+
+@section Head {
+    <meta name="robots" content="noindex" />
+}
+
+<section class="section">
+    <div class="container">
+        @if (order is null)
+        {
+            <header class="page-head">
+                <h1>Acompanhar pedido</h1>
+                <p>Digite o código que você recebeu ao enviar o pedido.</p>
+            </header>
+
+            @* O código vai na query; o action fica sem código para não reaproveitar o da URL atual. *@
+            <form method="get" action="@Url.Page("Track", new { code = "" })" class="order-form form-card track-search">
+                @if (Model.NotFoundCode)
+                {
+                    <div class="alert alert-danger" role="alert">Não encontramos um pedido com esse código. Confira e tente de novo.</div>
+                }
+                <label for="code" class="form-label">Código do pedido</label>
+                <div class="track-search-row">
+                    <input id="code" name="code" class="form-control track-code-input" value="@Model.Code" maxlength="20"
+                           autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex.: 7KQ2M9XA" required />
+                    <button type="submit" class="btn btn-cb">Ver pedido</button>
+                </div>
+            </form>
+        }
+        else
+        {
+            var cancelled = Model.CurrentStep is null;
+
+            <header class="page-head">
+                <h1>Pedido @order.Code</h1>
+                <p>Olá, @order.CustomerName! Aqui você vê como está o seu pedido.</p>
+            </header>
+
+            <div class="order-form">
+                <div class="form-card text-center">
+                    <p class="status-badge @(cancelled ? "is-closed" : "")">@FormOptions.StatusLabel(order.Status)</p>
+                    <p class="mb-0">@FormOptions.StatusDescription(order.Status)</p>
+                    @if (order.Status == OrderStatus.Rejected && !string.IsNullOrWhiteSpace(order.RejectionReason))
+                    {
+                        <p class="form-hint mt-2 mb-0">Motivo: @order.RejectionReason</p>
+                    }
+
+                    @if (!cancelled)
+                    {
+                        <ol class="track-steps">
+                            @for (var i = 0; i < TrackModel.Steps.Length; i++)
+                            {
+                                var state = i < Model.CurrentStep ? "is-done" : i == Model.CurrentStep ? "is-current" : "";
+                                <li class="@state" aria-current="@(i == Model.CurrentStep ? "step" : null)">@TrackModel.Steps[i]</li>
+                            }
+                        </ol>
+                    }
+                </div>
+
+                @if (order.Price is not null)
+                {
+                    <div class="form-card">
+                        <h2>Valores combinados</h2>
+                        <dl class="money-list">
+                            <dt>Bolo</dt>
+                            <dd>@FormOptions.FormatMoney(order.Price.Value)</dd>
+
+                            @if (order.DeliveryFee is > 0)
+                            {
+                                <dt>Taxa de entrega</dt>
+                                <dd>@FormOptions.FormatMoney(order.DeliveryFee.Value)</dd>
+                            }
+
+                            <dt class="is-total">Total</dt>
+                            <dd class="is-total">@FormOptions.FormatMoney(order.Total ?? 0)</dd>
+
+                            @if (order.DepositAmount is > 0)
+                            {
+                                <dt>Sinal (Pix)</dt>
+                                <dd>
+                                    @FormOptions.FormatMoney(order.DepositAmount.Value)
+                                    <span class="form-hint">@(order.DepositPaid ? "pago" : "aguardando")</span>
+                                </dd>
+                            }
+
+                            @* O backend só desconta o sinal depois que ele é pago. *@
+                            <dt>@(order.DepositPaid ? "Restante, na retirada ou entrega" : "Falta pagar")</dt>
+                            <dd>@FormOptions.FormatMoney(order.RemainingAmount ?? 0)</dd>
+                        </dl>
+                    </div>
+                }
+
+                <partial name="_OrderSummary" model="order" />
+
+                <div class="text-center">
+                    @if (Model.Site.WhatsAppLink is not null)
+                    {
+                        <a class="btn btn-cb" href="@Model.Site.WhatsAppLink" target="_blank" rel="noopener">Falar no WhatsApp</a>
+                    }
+                    <a class="btn btn-cb-outline" asp-page="/Index">Voltar ao início</a>
+                </div>
+            </div>
+        }
+    </div>
+</section>

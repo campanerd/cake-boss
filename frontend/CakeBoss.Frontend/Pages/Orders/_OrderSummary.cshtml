@@ -1,0 +1,35 @@
+@* Resumo do pedido: o mesmo na confirmação e no acompanhamento. *@
+@using CakeBoss.Backend.Features.Ordering
+@using CakeBoss.Frontend.Site
+@model OrderTrackingView
+
+<div class="form-card">
+    <h2>Resumo</h2>
+    <dl class="summary-list">
+        <dt>Data e horário</dt>
+        <dd>@FormOptions.FormatDate(Model.Date) às @Model.Time.ToString("HH:mm")</dd>
+
+        <dt>@FormOptions.DeliveryLabel(Model.DeliveryType)</dt>
+        <dd>@(Model.DeliveryAddress ?? "Você retira na confeitaria")</dd>
+
+        @foreach (var item in Model.Items)
+        {
+            <dt>Bolo</dt>
+            <dd>
+                Massa de @item.Batter, recheio de @string.Join(" e ", item.Fillings), cobertura de @item.Frosting,
+                @FormOptions.FormatWeight(item.WeightKg).
+                <br />
+                <span class="form-hint">@item.Decoration</span>
+            </dd>
+        }
+
+        <dt>Pagamento do restante</dt>
+        <dd>@FormOptions.PaymentLabel(Model.PaymentMethod)</dd>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Notes))
+        {
+            <dt>Observações</dt>
+            <dd>@Model.Notes</dd>
+        }
+    </dl>
+</div>

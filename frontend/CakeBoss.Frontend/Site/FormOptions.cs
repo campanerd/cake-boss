@@ -1,9 +1,10 @@
+using System.Globalization;
 using CakeBoss.Backend.Features.Orders;
 
 namespace CakeBoss.Frontend.Site;
 
 /// <summary>
-/// Sugestões e rótulos do formulário de pedido. As sugestões só ajudam a preencher: o cliente pode escrever outro sabor.
+/// Sugestões e rótulos do formulário e das páginas do pedido. As sugestões só ajudam a preencher: o cliente pode escrever outro sabor.
 /// Quando existir um cardápio editável pela dona, as listas vêm dele.
 /// </summary>
 public static class FormOptions
@@ -30,6 +31,41 @@ public static class FormOptions
         _ => method.ToString()
     };
 
+    /// <summary>Nome do status para o cliente.</summary>
+    public static string StatusLabel(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "Aguardando a confeiteira",
+        OrderStatus.Approved => "Aprovado, aguardando o sinal",
+        OrderStatus.Confirmed => "Confirmado",
+        OrderStatus.Completed => "Concluído",
+        OrderStatus.Rejected => "Recusado",
+        OrderStatus.Cancelled => "Cancelado",
+        _ => status.ToString()
+    };
+
+    /// <summary>O que o cliente deve esperar em cada status.</summary>
+    public static string StatusDescription(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "Recebemos o seu pedido. A confeiteira vai chamar você no WhatsApp para combinar o valor e o sinal.",
+        OrderStatus.Approved => "O pedido foi aprovado. Pague o sinal por Pix, como combinado, para garantir a data.",
+        OrderStatus.Confirmed => "Sinal recebido: a data está garantida. Agora é com a gente!",
+        OrderStatus.Completed => "Pedido entregue. Obrigada pela preferência!",
+        OrderStatus.Rejected => "Infelizmente a confeiteira não pôde aceitar este pedido.",
+        OrderStatus.Cancelled => "Este pedido foi cancelado.",
+        _ => ""
+    };
+
     /// <summary>Ex.: "sexta-feira, 27/11/2026". Feito à mão para não depender dos dados de cultura do servidor.</summary>
     public static string FormatDate(DateOnly date) => $"{WeekDays[(int)date.DayOfWeek]}, {date:dd/MM/yyyy}";
+
+    /// <summary>Ex.: "R$ 1.234,50". Também feito à mão, pelo mesmo motivo.</summary>
+    public static string FormatMoney(decimal value)
+    {
+        var text = value.ToString("#,##0.00", CultureInfo.InvariantCulture);
+        return "R$ " + text.Replace(',', '_').Replace('.', ',').Replace('_', '.');
+    }
+
+    /// <summary>Ex.: "2,5 kg".</summary>
+    public static string FormatWeight(decimal kg) =>
+        kg.ToString("0.##", CultureInfo.InvariantCulture).Replace('.', ',') + " kg";
 }
