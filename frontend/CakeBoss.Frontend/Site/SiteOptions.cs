@@ -22,6 +22,12 @@ public sealed class SiteOptions
     /// <summary>Usuário do Instagram, sem o @. Vazio esconde o link.</summary>
     public string? InstagramUser { get; set; }
 
+    /// <summary>
+    /// Liga o formulário de pedido. Em produção fica desligado até existir o painel da dona:
+    /// sem ele, um pedido de verdade cairia no banco sem ninguém para vê-lo.
+    /// </summary>
+    public bool OrdersEnabled { get; set; }
+
     public string? WhatsAppLink =>
         string.IsNullOrWhiteSpace(WhatsAppNumber) ? null : $"https://wa.me/{WhatsAppNumber}";
 

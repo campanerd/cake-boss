@@ -1,7 +1,12 @@
 ﻿@page
 @model IndexModel
+@inject Microsoft.Extensions.Options.IOptions<CakeBoss.Frontend.Site.SiteOptions> SiteOptions
 @{
     ViewData["Title"] = "Bolos personalizados";
+
+    // Com o formulário aberto os botões levam a ele; fechado, levam à explicação de como encomendar.
+    var ordersEnabled = SiteOptions.Value.OrdersEnabled;
+    var orderUrl = ordersEnabled ? Url.Page("/Orders/New") : "#como-funciona";
 }
 
 @* ---------- Apresentação ---------- *@
@@ -16,7 +21,7 @@
                     A confeiteira confirma tudo com você pelo WhatsApp.
                 </p>
                 <div class="hero-actions">
-                    <a class="btn btn-cb btn-lg" href="#como-funciona">Quero encomendar</a>
+                    <a class="btn btn-cb btn-lg" href="@orderUrl">Quero encomendar</a>
                     <a class="btn btn-cb-outline btn-lg" href="#sabores">Ver sabores</a>
                 </div>
             </div>
@@ -206,6 +211,6 @@
     <div class="container">
         <h2>Tem uma ideia de bolo?</h2>
         <p>Conte para a gente o tema e a data da festa. A confeiteira responde e combina os detalhes com você.</p>
-        <a class="btn btn-cb-outline btn-lg" href="#como-funciona">Ver como encomendar</a>
+        <a class="btn btn-cb-outline btn-lg" href="@(ordersEnabled ? orderUrl : "#como-funciona")">@(ordersEnabled ? "Fazer meu pedido" : "Ver como encomendar")</a>
     </div>
 </section>
