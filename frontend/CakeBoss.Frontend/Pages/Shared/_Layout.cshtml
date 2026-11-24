@@ -4,6 +4,9 @@
     var pageTitle = ViewData["Title"] as string;
     var title = string.IsNullOrWhiteSpace(pageTitle) ? site.Name : $"{pageTitle} · {site.Name}";
     var description = ViewData["Description"] as string ?? site.Tagline;
+
+    // As páginas do painel (_PanelLayout) trazem a própria barra: sem cabeçalho e rodapé do site, e fora dos buscadores.
+    var panelMode = ViewData["PanelMode"] is true;
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -12,6 +15,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="@description" />
     <meta name="theme-color" content="#F4D6CB" />
+    @if (panelMode)
+    {
+        <meta name="robots" content="noindex, nofollow" />
+    }
     <title>@title</title>
 
     @* Fontes: Lobster nos títulos (cursiva) e Nunito no texto (arredondada, fácil de ler no celular). *@
@@ -26,13 +33,19 @@
 <body>
     <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
-    <partial name="_Header" />
+    @if (!panelMode)
+    {
+        <partial name="_Header" />
+    }
 
     <main id="conteudo" class="site-main">
         @RenderBody()
     </main>
 
-    <partial name="_Footer" />
+    @if (!panelMode)
+    {
+        <partial name="_Footer" />
+    }
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

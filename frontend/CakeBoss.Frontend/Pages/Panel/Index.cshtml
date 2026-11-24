@@ -1,27 +1,34 @@
 @page "/painel"
+@using CakeBoss.Backend.Features.Management
+@using CakeBoss.Frontend.Site
 @model IndexModel
 @{
-    ViewData["Title"] = "Painel";
-}
-
-@section Head {
-    <meta name="robots" content="noindex, nofollow" />
+    ViewData["Title"] = "Pedidos";
+    var groups = Model.Groups;
 }
 
 <section class="section">
     <div class="container">
         <header class="page-head">
-            <h1>Painel</h1>
-            <p>Sessão iniciada como @Model.Email.</p>
+            <h1>Pedidos</h1>
+            @if (groups.Pending.Count > 0)
+            {
+                <p>@(groups.Pending.Count == 1 ? "1 pedido esperando resposta" : $"{groups.Pending.Count} pedidos esperando resposta").</p>
+            }
         </header>
 
-        <div class="login-form form-card text-center">
-            <p>Os pedidos aparecem aqui em breve.</p>
+        <div class="order-form">
+            @if (groups.IsEmpty)
+            {
+                <div class="form-card text-center">
+                    <p class="mb-0">Nenhum pedido ainda. Quando alguém pedir pelo site, ele aparece aqui.</p>
+                </div>
+            }
 
-            @* POST com antiforgery: sair não pode ser um link que qualquer página consiga disparar. *@
-            <form method="post" asp-page-handler="Logout">
-                <button type="submit" class="btn btn-cb-outline">Sair</button>
-            </form>
+            @await Html.PartialAsync("_OrderGroup", ("Pendentes", groups.Pending))
+            @await Html.PartialAsync("_OrderGroup", ("Aguardando o sinal", groups.WaitingDeposit))
+            @await Html.PartialAsync("_OrderGroup", ("Confirmados", groups.Confirmed))
+            @await Html.PartialAsync("_OrderGroup", ("Encerrados", groups.Closed))
         </div>
     </div>
 </section>

@@ -57,6 +57,33 @@ public class FormOptionsTests
         Assert.False(string.IsNullOrWhiteSpace(FormOptions.StatusDescription(status)));
     }
 
+    // Telefone guardado só com dígitos; o painel mostra no formato que a dona reconhece.
+    [Theory]
+    [InlineData("11912345678", "(11) 91234-5678")]
+    [InlineData("1133334444", "(11) 3333-4444")]
+    [InlineData("12345", "12345")]
+    [InlineData("119123abc78", "119123abc78")]
+    [InlineData("", "")]
+    public void FormatPhone_UsesTheBrazilianFormat_AndLeavesOddValuesAlone(string digits, string expected)
+    {
+        Assert.Equal(expected, FormOptions.FormatPhone(digits));
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Pending)]
+    [InlineData(OrderStatus.Approved)]
+    [InlineData(OrderStatus.Confirmed)]
+    [InlineData(OrderStatus.Completed)]
+    [InlineData(OrderStatus.Rejected)]
+    [InlineData(OrderStatus.Cancelled)]
+    public void EveryStatus_HasAShortPortugueseLabelForThePanel(OrderStatus status)
+    {
+        var label = FormOptions.PanelStatusLabel(status);
+
+        Assert.NotEqual(status.ToString(), label);
+        Assert.InRange(label.Length, 1, 20); // cabe no cartão da lista
+    }
+
     [Fact]
     public void StatusTests_CoverEveryStatus()
     {

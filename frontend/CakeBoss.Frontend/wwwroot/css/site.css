@@ -1014,3 +1014,186 @@ button.calendar-day:hover,
     max-width: 26rem;
     margin-inline: auto;
 }
+
+/* 12. Painel: barra, lista e detalhe dos pedidos --------------------------- */
+.panel-bar {
+    background: var(--cb-card);
+    border-bottom: 1px solid var(--cb-line);
+}
+
+.panel-bar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: 0.75rem;
+}
+
+.panel-brand {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    text-decoration: none;
+}
+
+.panel-brand-name {
+    font-family: var(--cb-font-script);
+    font-size: 1.35rem;
+    color: var(--cb-rose);
+}
+
+.panel-brand-tag {
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cb-chocolate-soft);
+}
+
+.panel-nav {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    font-weight: 700;
+}
+
+.panel-nav a {
+    color: var(--cb-chocolate);
+    text-decoration: none;
+}
+
+.panel-nav a:hover {
+    color: var(--cb-coral-strong);
+}
+
+.panel-nav form {
+    margin: 0;
+}
+
+.panel-logout {
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    color: var(--cb-coral-strong);
+    background: none;
+    border: 0;
+}
+
+.panel-back {
+    max-width: 46rem;
+    margin: 0 auto 0.5rem;
+}
+
+.panel-back a {
+    color: var(--cb-rose);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* Lista: um bloco por etapa, com um cartão grande (fácil de tocar no celular) por pedido. */
+.order-group {
+    margin-bottom: 2rem;
+}
+
+.order-group-title {
+    margin-bottom: 0.75rem;
+    font-family: var(--cb-font-script);
+    font-weight: 400;
+    font-size: 1.5rem;
+    color: var(--cb-rose);
+}
+
+.order-group-count {
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.6rem;
+    font-family: var(--cb-font-body);
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--cb-chocolate-soft);
+    background: var(--cb-cream-deep);
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+.order-cards {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.order-card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1rem 1.1rem;
+    color: var(--cb-chocolate);
+    text-decoration: none;
+    background: var(--cb-card);
+    border: 1px solid var(--cb-line);
+    border-radius: var(--cb-radius);
+    box-shadow: var(--cb-shadow);
+}
+
+.order-card:hover,
+.order-card:focus-visible {
+    border-color: var(--cb-coral);
+}
+
+.order-card-main {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.order-card-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.order-card-when {
+    font-weight: 700;
+}
+
+.order-card-meta {
+    font-size: 0.85rem;
+    color: var(--cb-chocolate-soft);
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+.status-pill {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 0.25rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #fff;
+    background: var(--cb-chocolate-soft);
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.status-pill.status-pending {
+    background: var(--cb-coral-strong);
+}
+
+.status-pill.status-approved {
+    background: #a8742f;
+}
+
+.status-pill.status-confirmed,
+.status-pill.status-completed {
+    background: #4c7a4f;
+}
+
+.status-pill.status-rejected,
+.status-pill.status-cancelled {
+    background: var(--cb-chocolate-soft);
+}

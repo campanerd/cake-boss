@@ -1,0 +1,31 @@
+@* Um bloco da lista de pedidos: título com a contagem e um cartão por pedido. Bloco vazio não aparece. *@
+@using CakeBoss.Backend.Features.Management
+@using CakeBoss.Frontend.Site
+@model (string Title, IReadOnlyList<OrderListItem> Items)
+
+@if (Model.Items.Count > 0)
+{
+    <section class="order-group" aria-label="@Model.Title">
+        <h2 class="order-group-title">
+            @Model.Title <span class="order-group-count">@Model.Items.Count</span>
+        </h2>
+
+        <ul class="order-cards">
+            @foreach (var order in Model.Items)
+            {
+                <li>
+                    <a class="order-card" asp-page="/Panel/Orders/Details" asp-route-id="@order.Id">
+                        <span class="order-card-main">
+                            <span class="order-card-name">@order.CustomerName</span>
+                            <span class="order-card-when">@FormOptions.FormatDate(order.Date) <span class="nowrap">às @order.Time.ToString("HH:mm")</span></span>
+                            <span class="order-card-meta">
+                                @FormOptions.DeliveryLabel(order.DeliveryType) · <span class="nowrap">@FormOptions.FormatWeight(order.TotalWeightKg)</span> · <span class="nowrap">@order.Code</span>
+                            </span>
+                        </span>
+                        <span class="status-pill status-@order.Status.ToString().ToLowerInvariant()">@FormOptions.PanelStatusLabel(order.Status)</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </section>
+}
