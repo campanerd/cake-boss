@@ -1,0 +1,78 @@
+name: Deploy
+
+# Publicação manual em produção: Actions > Deploy > Run workflow.
+# O Render NÃO publica sozinho a cada merge (o Auto-Deploy do serviço fica desligado): quem publica é este workflow,
+# quando o Davi quiser, e cada publicação fica registrada no ambiente "prod" (quadro Deployments do repositório).
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'O que publicar: branch, tag ou commit (padrão: o último commit da main)'
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+# Uma publicação por vez, e nunca cancela uma que já começou.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to prod
+    # Só roda a partir do workflow da main: uma branch com este arquivo alterado não publica nada.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: prod
+      url: https://cake-boss.onrender.com
+    steps:
+      # O código do repositório aqui é o da main (traz o script de espera); o que vai para produção é o "ref" pedido.
+      - uses: actions/checkout@v7
+
+      - name: Resolve the commit
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ inputs.ref }}
+        run: |
+          sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${REF}" --jq .sha)"
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "Publicando ${REF} (${sha})"
+
+      - name: Trigger the Render deploy
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          if [ -z "${DEPLOY_HOOK}" ]; then
+            echo "::error::Falta o segredo RENDER_DEPLOY_HOOK no ambiente prod (Settings > Environments > prod)."
+            exit 1
+          fi
+
+          # O hook já traz "?key=..."; o ref pede ao Render exatamente este commit. A URL é segredo: nunca é impressa.
+          separator='?'
+          if [[ "${DEPLOY_HOOK}" == *"?"* ]]; then separator='&'; fi
+
+          curl --fail --silent --show-error --max-time 60 -X POST "${DEPLOY_HOOK}${separator}ref=${SHA}" > /dev/null
+          echo "Deploy do commit ${SHA} pedido ao Render."
+
+      # O build do Render leva alguns minutos. Só termina com sucesso quando o /version do site mostra este commit.
+      - name: Wait for the new version
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: bash .github/scripts/wait-for-version.sh https://cake-boss.onrender.com "${SHA}"
+
+      - name: Summary
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          {
+            echo "### Publicado em produção"
+            echo ""
+            echo "- Commit: \`${SHA}\`"
+            echo "- Site: https://cake-boss.onrender.com"
+          } >> "$GITHUB_STEP_SUMMARY"
