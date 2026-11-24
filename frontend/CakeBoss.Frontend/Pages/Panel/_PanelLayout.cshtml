@@ -1,0 +1,32 @@
+@inject Microsoft.Extensions.Options.IOptions<CakeBoss.Frontend.Site.SiteOptions> SiteOptions
+@{
+    // Layout em cima do _Layout do site: o _Layout vê esta marca e tira o cabeçalho e o rodapé públicos.
+    Layout = "_Layout";
+    ViewData["PanelMode"] = true;
+
+    var signedIn = User.Identity?.IsAuthenticated == true;
+}
+
+<div class="panel-bar">
+    <div class="container panel-bar-inner">
+        <a class="panel-brand" asp-page="/Panel/Index">
+            <span class="panel-brand-name">@SiteOptions.Value.Name</span>
+            <span class="panel-brand-tag">Painel</span>
+        </a>
+
+        @if (signedIn)
+        {
+            <nav class="panel-nav" aria-label="Painel">
+                <a asp-page="/Panel/Index">Pedidos</a>
+                <a href="/" target="_blank" rel="noopener">Ver o site</a>
+
+                @* POST com antiforgery: sair não pode ser um link que qualquer página consiga disparar. *@
+                <form method="post" asp-page="/Panel/Index" asp-page-handler="Logout">
+                    <button type="submit" class="panel-logout">Sair</button>
+                </form>
+            </nav>
+        }
+    </div>
+</div>
+
+@RenderBody()

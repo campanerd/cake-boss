@@ -65,6 +65,26 @@ public static class FormOptions
         return "R$ " + text.Replace(',', '_').Replace('.', ',').Replace('_', '.');
     }
 
+    /// <summary>Nome do status para a dona, no painel. Curto, para caber no cartão da lista.</summary>
+    public static string PanelStatusLabel(OrderStatus status) => status switch
+    {
+        OrderStatus.Pending => "Pendente",
+        OrderStatus.Approved => "Aguardando sinal",
+        OrderStatus.Confirmed => "Confirmado",
+        OrderStatus.Completed => "Concluído",
+        OrderStatus.Rejected => "Recusado",
+        OrderStatus.Cancelled => "Cancelado",
+        _ => status.ToString()
+    };
+
+    /// <summary>Ex.: "(11) 91234-5678". O telefone vem só com os dígitos (DDD e número); fora do padrão, devolve como veio.</summary>
+    public static string FormatPhone(string digits) => digits switch
+    {
+        { Length: 11 } when digits.All(char.IsDigit) => $"({digits[..2]}) {digits[2..7]}-{digits[7..]}",
+        { Length: 10 } when digits.All(char.IsDigit) => $"({digits[..2]}) {digits[2..6]}-{digits[6..]}",
+        _ => digits
+    };
+
     /// <summary>Ex.: "2,5 kg".</summary>
     public static string FormatWeight(decimal kg) =>
         kg.ToString("0.##", CultureInfo.InvariantCulture).Replace('.', ',') + " kg";
