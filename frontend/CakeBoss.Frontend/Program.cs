@@ -88,6 +88,14 @@ app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
 
+// Qual commit está no ar (o Render informa em RENDER_GIT_COMMIT). O workflow de deploy espera por ele para confirmar que a
+// versão nova subiu: o /health não serve, porque o Render mantém a versão antiga respondendo até a nova ficar pronta.
+app.MapGet("/version", (HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Ok(new { commit = BuildInfo.NormalizeCommit(Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT")) });
+});
+
 // Chamado por um ping externo (cron-job.org ou UptimeRobot) a cada ~10 min: mantém o app acordado
 // e gera atividade no banco, evitando a pausa do Supabase por inatividade.
 app.MapGet("/health", async (DatabaseHealth health, ILogger<DatabaseHealth> logger, CancellationToken ct) =>
