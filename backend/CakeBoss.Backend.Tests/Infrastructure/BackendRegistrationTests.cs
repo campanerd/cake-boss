@@ -1,5 +1,6 @@
 using CakeBoss.Backend.Features.Admin;
 using CakeBoss.Backend.Features.Availability;
+using CakeBoss.Backend.Features.Management;
 using CakeBoss.Backend.Features.Ordering;
 using CakeBoss.Backend.Infrastructure.Data;
 using CakeBoss.Backend.Infrastructure.Health;
@@ -25,6 +26,7 @@ public class BackendRegistrationTests
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<AppDbContext>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<AvailabilityService>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<OrderService>());
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<OrderManagementService>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<DatabaseHealth>());
         Assert.Same(TimeProvider.System, provider.GetRequiredService<TimeProvider>());
     }
