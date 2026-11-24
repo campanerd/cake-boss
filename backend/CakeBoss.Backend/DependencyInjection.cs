@@ -1,3 +1,4 @@
+using CakeBoss.Backend.Features.Admin;
 using CakeBoss.Backend.Features.Availability;
 using CakeBoss.Backend.Features.Ordering;
 using CakeBoss.Backend.Infrastructure.Data;
@@ -27,6 +28,12 @@ public static class DependencyInjection
         services.AddDataProtection()
             .SetApplicationName("CakeBoss")
             .PersistKeysToDbContext<AppDbContext>();
+
+        // Login da dona. O frontend liga a seção "Admin" da configuração a AdminOptions (como faz com SiteOptions);
+        // sem ela, ninguém entra. O atraso por tentativa fica na memória, então precisa ser um só (singleton).
+        services.AddOptions<AdminOptions>();
+        services.AddSingleton<LoginThrottle>();
+        services.AddSingleton<AdminLoginService>();
 
         services.AddScoped<DatabaseHealth>();
         services.AddScoped<AvailabilityService>();

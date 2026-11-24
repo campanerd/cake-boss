@@ -1,3 +1,4 @@
+using CakeBoss.Backend.Features.Admin;
 using CakeBoss.Backend.Features.Availability;
 using CakeBoss.Backend.Features.Ordering;
 using CakeBoss.Backend.Infrastructure.Data;
@@ -26,6 +27,21 @@ public class BackendRegistrationTests
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<OrderService>());
         Assert.NotNull(scope.ServiceProvider.GetRequiredService<DatabaseHealth>());
         Assert.Same(TimeProvider.System, provider.GetRequiredService<TimeProvider>());
+    }
+
+    [Fact]
+    public void AddBackend_RegistersTheAdminLogin_AsSingletons_AndNobodyGetsInWithoutConfiguration()
+    {
+        var services = new ServiceCollection();
+        services.AddBackend(UnreachableConnection);
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        var login = provider.GetRequiredService<AdminLoginService>();
+
+        // Um só controle de tentativas para o app inteiro: se fosse um por requisição, o atraso nunca valeria.
+        Assert.Same(login, provider.GetRequiredService<AdminLoginService>());
+        Assert.Same(provider.GetRequiredService<LoginThrottle>(), provider.GetRequiredService<LoginThrottle>());
+        Assert.False(login.SignIn("1.2.3.4", "dona@confeitaria.com", "qualquer senha longa").Succeeded);
     }
 
     [Theory]
