@@ -38,6 +38,10 @@
             </div>
         </div>
 
-        <p class="footer-copy">&copy; @DateTime.Now.Year @site.Name</p>
+        <p class="footer-copy">
+            <span>&copy; @DateTime.Now.Year @site.Name</span>
+            @* Entrada discreta para a confeiteira: quem não é ela cai na tela de login e não passa dali. *@
+            <a class="footer-admin" asp-page="/Panel/Index" rel="nofollow">Área da confeiteira</a>
+        </p>
     </div>
 </footer>

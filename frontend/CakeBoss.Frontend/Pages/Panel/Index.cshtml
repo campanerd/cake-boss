@@ -1,0 +1,27 @@
+@page "/painel"
+@model IndexModel
+@{
+    ViewData["Title"] = "Painel";
+}
+
+@section Head {
+    <meta name="robots" content="noindex, nofollow" />
+}
+
+<section class="section">
+    <div class="container">
+        <header class="page-head">
+            <h1>Painel</h1>
+            <p>Sessão iniciada como @Model.Email.</p>
+        </header>
+
+        <div class="login-form form-card text-center">
+            <p>Os pedidos aparecem aqui em breve.</p>
+
+            @* POST com antiforgery: sair não pode ser um link que qualquer página consiga disparar. *@
+            <form method="post" asp-page-handler="Logout">
+                <button type="submit" class="btn btn-cb-outline">Sair</button>
+            </form>
+        </div>
+    </div>
+</section>

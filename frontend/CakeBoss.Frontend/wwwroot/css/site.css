@@ -520,11 +520,28 @@ svg {
 }
 
 .footer-copy {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
     margin: 2rem 0 0;
     padding-top: 1.25rem;
     font-size: 0.85rem;
     color: rgba(247, 239, 230, 0.7);
     border-top: 1px solid rgba(247, 239, 230, 0.2);
+}
+
+/* Entrada do painel: pequena e sem destaque, só aparece de verdade para quem a procura. */
+.footer-admin {
+    font-size: 0.8rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.footer-admin:hover,
+.footer-admin:focus-visible {
+    color: var(--cb-cream);
+    text-decoration: underline;
 }
 
 /* 8. Acessibilidade -------------------------------------------------------- */
@@ -990,4 +1007,10 @@ button.calendar-day:hover,
     font-size: 1.1rem;
     font-weight: 800;
     border-top: 1px solid var(--cb-line);
+}
+
+/* 11. Painel da dona ------------------------------------------------------- */
+.login-form {
+    max-width: 26rem;
+    margin-inline: auto;
 }
