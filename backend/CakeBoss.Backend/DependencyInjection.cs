@@ -1,5 +1,6 @@
 using CakeBoss.Backend.Features.Admin;
 using CakeBoss.Backend.Features.Availability;
+using CakeBoss.Backend.Features.Management;
 using CakeBoss.Backend.Features.Ordering;
 using CakeBoss.Backend.Infrastructure.Data;
 using CakeBoss.Backend.Infrastructure.Health;
@@ -38,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<DatabaseHealth>();
         services.AddScoped<AvailabilityService>();
         services.AddScoped<OrderService>();
+        services.AddScoped<OrderManagementService>();
 
         return services;
     }
