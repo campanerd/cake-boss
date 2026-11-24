@@ -1,0 +1,37 @@
+@page "/painel/entrar"
+@model LoginModel
+@{
+    ViewData["Title"] = "Entrar no painel";
+}
+
+@section Head {
+    <meta name="robots" content="noindex, nofollow" />
+}
+
+<section class="section">
+    <div class="container">
+        <header class="page-head">
+            <h1>Painel</h1>
+            <p>Entre para ver os pedidos.</p>
+        </header>
+
+        @* Sem action: o envio volta para este mesmo endereço, com o ReturnUrl que veio na query. *@
+        <form method="post" class="login-form form-card" novalidate>
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="Form.Email" class="form-label">E-mail</label>
+                <input asp-for="Form.Email" type="email" class="form-control" maxlength="200"
+                       autocomplete="username" autofocus required />
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Form.Password" class="form-label">Senha</label>
+                <input asp-for="Form.Password" type="password" class="form-control" maxlength="200"
+                       autocomplete="current-password" required />
+            </div>
+
+            <button type="submit" class="btn btn-cb w-100">Entrar</button>
+        </form>
+    </div>
+</section>
