@@ -191,4 +191,43 @@ public class AvailabilityServiceTests
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             service.GetDaysWithFreeTimesAsync(Tuesday, Tuesday.AddDays(400)));
     }
+
+    [PostgresFact]
+    public async Task FindApprovalConflict_WithTheSlotTakenByAnotherOrder_ReturnsReason()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        database.Db.Orders.Add(NewOrder(Wednesday, 15, OrderStatus.Approved));
+        await database.Db.SaveChangesAsync();
+
+        var reason = await CreateService(database)
+            .FindApprovalConflictAsync(Guid.NewGuid(), Wednesday, new TimeOnly(15, 0), 2m, false);
+
+        Assert.Equal("Já existe um pedido aprovado nesse horário.", reason);
+    }
+
+    [PostgresFact]
+    public async Task FindApprovalConflict_NeverCountsTheOrderItself()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Wednesday, 15, OrderStatus.Approved);
+        database.Db.Orders.Add(order);
+        await database.Db.SaveChangesAsync();
+
+        var reason = await CreateService(database)
+            .FindApprovalConflictAsync(order.Id, Wednesday, new TimeOnly(15, 0), 2m, false);
+
+        Assert.Null(reason);
+    }
+
+    // O padrão exige 3 dias de antecedência: o sábado de amanhã não é oferecido ao cliente, mas a dona ainda pode aprovar.
+    [PostgresFact]
+    public async Task FindApprovalConflict_AllowsADateInsideTheMinimumLeadTime()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var saturday = new DateOnly(2026, 11, 14); // amanhã, aberto das 8h às 18h
+
+        Assert.Empty(await CreateService(database).GetFreeTimesAsync(saturday));
+        Assert.Null(await CreateService(database)
+            .FindApprovalConflictAsync(Guid.NewGuid(), saturday, new TimeOnly(10, 0), 2m, false));
+    }
 }

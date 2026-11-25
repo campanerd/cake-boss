@@ -301,4 +301,113 @@ public class AvailabilityCalculatorTests
 
         Assert.Equal(AvailabilityCalculator.DaysWithFreeTimes(input, Monday, NextMonday), days.Select(d => d.Date));
     }
+
+    // ---------- Aprovação pela dona ----------
+
+    [Fact]
+    public void FindApprovalConflict_WithFreeSlot_ReturnsNull()
+    {
+        Assert.Null(AvailabilityCalculator.FindApprovalConflict(Input(), Tuesday, new TimeOnly(15, 0), 2m, false));
+    }
+
+    // A antecedência mínima vale para o cliente pedir, não para a dona aprovar um pedido que ficou pendente negociando.
+    [Fact]
+    public void FindApprovalConflict_IgnoresTheMinimumLeadTime()
+    {
+        var input = Input(settings: Settings(leadDays: 3));
+
+        Assert.Empty(AvailabilityCalculator.FreeTimes(input, Tuesday));
+        Assert.Null(AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(15, 0), 2m, false));
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WithPastDate_ReturnsReason()
+    {
+        var reason = AvailabilityCalculator.FindApprovalConflict(Input(), Saturday.AddDays(-7), new TimeOnly(10, 0), 2m, false);
+
+        Assert.Equal("A data do pedido já passou.", reason);
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WithTimeAlreadyPassedToday_ReturnsReason()
+    {
+        // "Agora" é terça às 16h30, dia com expediente.
+        var input = Input(now: new DateTime(2026, 11, 17, 16, 30, 0));
+
+        var reason = AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(16, 0), 2m, false);
+
+        Assert.Equal("O horário do pedido já passou.", reason);
+    }
+
+    [Fact]
+    public void FindApprovalConflict_OnClosedDay_ReturnsReason()
+    {
+        Assert.Equal(
+            "A confeitaria não abre nesse dia da semana.",
+            AvailabilityCalculator.FindApprovalConflict(Input(), Sunday, new TimeOnly(10, 0), 2m, false));
+    }
+
+    [Theory]
+    [InlineData(13)] // antes de abrir
+    [InlineData(20)] // o horário inteiro não cabe: fecha às 20h
+    public void FindApprovalConflict_OutsideOpeningHours_ReturnsReason(int hour)
+    {
+        var reason = AvailabilityCalculator.FindApprovalConflict(Input(), Tuesday, new TimeOnly(hour, 0), 2m, false);
+
+        Assert.Equal("O horário do pedido está fora do expediente.", reason);
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WithScheduleBlock_ReturnsReason()
+    {
+        var input = Input(blocks: [ScheduleBlock.Create(Tuesday, Tuesday, new TimeOnly(15, 0), new TimeOnly(17, 0))]);
+
+        Assert.Equal(
+            "Esse dia ou horário está bloqueado na agenda.",
+            AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(15, 0), 2m, false));
+        Assert.Null(AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(18, 0), 2m, false));
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WithSameSlotTaken_ReturnsReason()
+    {
+        var input = Input(occupied: [Occupy(Tuesday, 15)]);
+
+        Assert.Equal(
+            "Já existe um pedido aprovado nesse horário.",
+            AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(15, 0), 2m, false));
+        Assert.Null(AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(16, 0), 2m, false));
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WithWholeDayOrderAlreadyThere_ReturnsReason()
+    {
+        var input = Input(occupied: [Occupy(Tuesday, 14, 3m, wholeDay: true)]);
+
+        Assert.Equal(
+            "Outro pedido aprovado já ocupa o dia inteiro.",
+            AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(18, 0), 2m, false));
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WholeDayOrderOnADayWithOtherOrders_ReturnsReason()
+    {
+        var input = Input(occupied: [Occupy(Tuesday, 14)]);
+
+        Assert.Equal(
+            "Já há pedido aprovado nesse dia; este não pode ocupar o dia inteiro.",
+            AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(18, 0), 2m, true));
+        Assert.Null(AvailabilityCalculator.FindApprovalConflict(input, Wednesday, new TimeOnly(18, 0), 2m, true));
+    }
+
+    [Fact]
+    public void FindApprovalConflict_WhenWeightExceedsWhatIsLeft_ReturnsReasonWithTheNumbers()
+    {
+        var input = Input(occupied: [Occupy(Tuesday, 14, 18.5m)]);
+
+        var reason = AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(15, 0), 2m, false);
+
+        Assert.Equal("Este pedido não cabe no limite do dia: já há 18,5 kg aprovados e o máximo é 20 kg.", reason);
+        Assert.Null(AvailabilityCalculator.FindApprovalConflict(input, Tuesday, new TimeOnly(15, 0), 1.5m, false));
+    }
 }
