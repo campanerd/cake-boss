@@ -49,6 +49,57 @@ public static class AvailabilityCalculator
         return free;
     }
 
+    /// <summary>
+    /// Confere se a dona ainda pode aprovar um pedido pendente naquele dia e horário. Devolve o motivo (em português) se não puder,
+    /// ou null se estiver tudo certo. Em <see cref="AvailabilityInput.Occupied"/> não deve constar o próprio pedido.
+    /// Diferente de <see cref="FreeTimes"/>, NÃO exige a antecedência mínima: ela vale para o cliente na hora de pedir, e o pedido
+    /// pode ter ficado pendente por dias, negociando, até chegar perto da data. Confere só o que realmente conflita.
+    /// </summary>
+    public static string? FindApprovalConflict(
+        AvailabilityInput input,
+        DateOnly date,
+        TimeOnly time,
+        decimal weightKg,
+        bool blocksWholeDay)
+    {
+        var today = DateOnly.FromDateTime(input.LocalNow);
+        if (date < today) return "A data do pedido já passou.";
+        if (date == today && time <= TimeOnly.FromDateTime(input.LocalNow)) return "O horário do pedido já passou.";
+
+        var window = input.OpeningHours.FirstOrDefault(h => h.DayOfWeek == date.DayOfWeek);
+        if (window is null) return "A confeitaria não abre nesse dia da semana.";
+
+        var step = TimeSpan.FromMinutes(input.Settings.SlotMinutes);
+        if (time < window.OpensAt || time.ToTimeSpan() + step > window.ClosesAt.ToTimeSpan())
+            return "O horário do pedido está fora do expediente.";
+
+        if (input.Blocks.Any(b => b.Covers(date, time)))
+            return "Esse dia ou horário está bloqueado na agenda.";
+
+        var occupiedToday = input.Occupied.Where(o => o.Date == date).ToList();
+
+        if (occupiedToday.Any(o => o.BlocksWholeDay))
+            return "Outro pedido aprovado já ocupa o dia inteiro.";
+
+        if (occupiedToday.Any(o => o.Time == time))
+            return "Já existe um pedido aprovado nesse horário.";
+
+        if (blocksWholeDay && occupiedToday.Count > 0)
+            return "Já há pedido aprovado nesse dia; este não pode ocupar o dia inteiro.";
+
+        var occupiedKg = occupiedToday.Sum(o => o.WeightKg);
+        if (weightKg > input.Settings.MaxKgPerDay - occupiedKg)
+        {
+            return $"Este pedido não cabe no limite do dia: já há {FormatKg(occupiedKg)} kg aprovados " +
+                   $"e o máximo é {FormatKg(input.Settings.MaxKgPerDay)} kg.";
+        }
+
+        return null;
+    }
+
+    private static string FormatKg(decimal kg) =>
+        kg.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',');
+
     /// <summary>Dias do intervalo (inclusive) que ainda têm ao menos um horário livre. Serve para montar o calendário.</summary>
     public static IReadOnlyList<DateOnly> DaysWithFreeTimes(
         AvailabilityInput input,

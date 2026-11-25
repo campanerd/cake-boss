@@ -58,9 +58,26 @@ public class AvailabilityService(AppDbContext db, TimeProvider clock)
         return AvailabilityCalculator.FreeDays(input, from, to, requestedKg);
     }
 
+    /// <summary>
+    /// Motivo pelo qual a dona não pode aprovar o pedido pendente (horário tomado, dia bloqueado, kg estourados...), ou null se pode.
+    /// Não exige a antecedência mínima (ver <see cref="AvailabilityCalculator.FindApprovalConflict"/>).
+    /// O próprio pedido nunca conta como ocupante.
+    /// </summary>
+    public virtual async Task<string?> FindApprovalConflictAsync(
+        Guid orderId,
+        DateOnly date,
+        TimeOnly time,
+        decimal weightKg,
+        bool blocksWholeDay,
+        CancellationToken ct = default)
+    {
+        var input = await LoadAsync(date, date, ct, ignoreOrderId: orderId);
+        return AvailabilityCalculator.FindApprovalConflict(input, date, time, weightKg, blocksWholeDay);
+    }
+
     private DateTime LocalNow() => TimeZoneInfo.ConvertTime(clock.GetUtcNow(), BrazilTimeZone.Value).DateTime;
 
-    private async Task<AvailabilityInput> LoadAsync(DateOnly from, DateOnly to, CancellationToken ct)
+    private async Task<AvailabilityInput> LoadAsync(DateOnly from, DateOnly to, CancellationToken ct, Guid? ignoreOrderId = null)
     {
         var openingHours = await db.OpeningHours.AsNoTracking().ToListAsync(ct);
         var settings = await db.Settings.AsNoTracking().SingleAsync(ct);
@@ -71,7 +88,7 @@ public class AvailabilityService(AppDbContext db, TimeProvider clock)
 
         var blockingStatuses = Order.SlotBlockingStatuses;
         var occupied = await db.Orders.AsNoTracking()
-            .Where(o => o.Date >= from && o.Date <= to && blockingStatuses.Contains(o.Status))
+            .Where(o => o.Date >= from && o.Date <= to && blockingStatuses.Contains(o.Status) && o.Id != ignoreOrderId)
             .Select(o => new OccupiedSlot(o.Date, o.Time, o.Items.Sum(i => i.WeightKg), o.BlocksWholeDay))
             .ToListAsync(ct);
 
