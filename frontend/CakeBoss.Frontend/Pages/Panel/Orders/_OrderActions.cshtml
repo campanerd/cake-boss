@@ -1,0 +1,122 @@
+@using CakeBoss.Backend.Features.Orders
+@using CakeBoss.Frontend.Site
+@model CakeBoss.Frontend.Pages.Panel.Orders.DetailsModel
+@{
+    var order = Model.Order!;
+}
+
+@* O que a dona pode fazer agora, conforme a etapa do pedido. Todos são POST com antiforgery (o Razor põe o token). *@
+
+@if (order.Status == OrderStatus.Pending)
+{
+    <form method="post" asp-page-handler="Approve" asp-route-id="@order.Id" class="form-card" novalidate>
+        <h2>Aprovar o pedido</h2>
+        <p class="form-hint">
+            Registre o que você combinou com o cliente. Ao aprovar, o horário passa a ser dele e some do calendário do site.
+        </p>
+
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <label asp-for="Approve.Price" class="form-label">Valor do bolo (R$)</label>
+                <input asp-for="Approve.Price" class="form-control" inputmode="decimal" autocomplete="off" placeholder="150,00" required />
+            </div>
+
+            @if (order.DeliveryType == DeliveryType.Delivery)
+            {
+                <div class="col-sm-6">
+                    <label asp-for="Approve.DeliveryFee" class="form-label">Taxa de entrega (R$)</label>
+                    <input asp-for="Approve.DeliveryFee" class="form-control" inputmode="decimal" autocomplete="off" placeholder="0,00" />
+                </div>
+            }
+
+            <div class="col-sm-6">
+                <label asp-for="Approve.Deposit" class="form-label">Sinal por Pix (R$)</label>
+                <input asp-for="Approve.Deposit" class="form-control" inputmode="decimal" autocomplete="off" placeholder="0,00" />
+                <div class="form-hint mt-1">Pode ser qualquer valor, até o total do pedido.</div>
+            </div>
+
+            <div class="col-12">
+                <label class="choice">
+                    <input asp-for="Approve.BlocksWholeDay" class="form-check-input" />
+                    <span>
+                        Ocupa o dia inteiro
+                        <span class="form-hint d-block">Para bolo grande ou decoração complexa: nenhum outro pedido nesse dia.</span>
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <button type="submit" class="btn btn-cb">Aprovar pedido</button>
+        </div>
+    </form>
+
+    <details class="form-card action-more">
+        <summary>Recusar este pedido</summary>
+        <form method="post" asp-page-handler="Reject" asp-route-id="@order.Id">
+            <label asp-for="Reject.Reason" class="form-label mt-3">Motivo (opcional)</label>
+            <textarea asp-for="Reject.Reason" class="form-control" rows="3" maxlength="500"></textarea>
+            <div class="form-hint mt-1">O cliente vê o motivo na página de acompanhamento.</div>
+            <div class="action-row">
+                <button type="submit" class="btn btn-cb-outline btn-cb-danger">Recusar pedido</button>
+            </div>
+        </form>
+    </details>
+}
+
+@if (order.Status == OrderStatus.Approved)
+{
+    <form method="post" asp-page-handler="ConfirmDeposit" asp-route-id="@order.Id" class="form-card">
+        <h2>Sinal</h2>
+        <p>
+            @if (order.DepositAmount is > 0)
+            {
+                <text>Aguardando o Pix de <strong>@FormOptions.FormatMoney(order.DepositAmount.Value)</strong>.
+                Confirme só depois de ver o valor na sua conta.</text>
+            }
+            else
+            {
+                <text>Não foi combinado sinal. Confirme para o pedido seguir.</text>
+            }
+        </p>
+        <div class="action-row">
+            <button type="submit" class="btn btn-cb">Confirmar sinal recebido</button>
+        </div>
+    </form>
+}
+
+@if (order.Status == OrderStatus.Confirmed)
+{
+    <form method="post" asp-page-handler="Complete" asp-route-id="@order.Id" class="form-card">
+        <h2>Entrega</h2>
+        <p>Quando o bolo for retirado ou entregue, marque o pedido como concluído.</p>
+        <div class="action-row">
+            <button type="submit" class="btn btn-cb">Marcar como concluído</button>
+        </div>
+    </form>
+}
+
+@if (order.Status is OrderStatus.Approved or OrderStatus.Confirmed)
+{
+    <details class="form-card action-more">
+        <summary>Cancelar este pedido</summary>
+        <form method="post" asp-page-handler="Cancel" asp-route-id="@order.Id">
+            <label asp-for="Cancel.Reason" class="form-label mt-3">Motivo (opcional)</label>
+            <textarea asp-for="Cancel.Reason" class="form-control" rows="3" maxlength="500"></textarea>
+
+            @* O sinal só pode ser retido se já foi pago. *@
+            @if (order.DepositPaid)
+            {
+                <label class="choice mt-3">
+                    <input asp-for="Cancel.KeepDeposit" class="form-check-input" />
+                    <span>Fico com o sinal</span>
+                </label>
+            }
+
+            <p class="form-hint mt-2 mb-0">O horário volta a ficar livre no calendário.</p>
+            <div class="action-row">
+                <button type="submit" class="btn btn-cb-outline btn-cb-danger">Cancelar pedido</button>
+            </div>
+        </form>
+    </details>
+}

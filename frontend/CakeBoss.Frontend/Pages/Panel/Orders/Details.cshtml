@@ -21,12 +21,19 @@
         </header>
 
         <div class="order-form">
+            @if (!string.IsNullOrEmpty(Model.Message))
+            {
+                <div class="alert alert-success" role="status">@Model.Message</div>
+            }
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
             @if (order.Status == OrderStatus.Pending)
             {
                 <div class="form-card text-center">
                     <p class="mb-3">Combine com @firstName o valor e o sinal. A mensagem já vai pronta com o pedido.</p>
                     <a class="btn btn-cb" href="@order.WhatsApp.Link" target="_blank" rel="noopener">Chamar @firstName no WhatsApp</a>
-                    <p class="form-hint mt-3 mb-0">Depois de combinar, o registro do valor e a aprovação ficam aqui (em breve).</p>
+                    <p class="form-hint mt-3 mb-0">Depois de combinar, registre o que ficou combinado em "Aprovar o pedido", mais abaixo.</p>
                 </div>
             }
 
@@ -131,6 +138,9 @@
                     }
                 </div>
             }
+
+            @* As ações vêm por último: a dona lê o pedido todo antes de aprovar, recusar ou cancelar. *@
+            <partial name="_OrderActions" model="Model" />
         </div>
     </div>
 </section>
