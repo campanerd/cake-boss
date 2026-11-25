@@ -1,16 +1,23 @@
+using CakeBoss.Backend.Features.Availability;
 using CakeBoss.Backend.Features.Notifications;
 using CakeBoss.Backend.Features.Orders;
 using CakeBoss.Backend.Infrastructure.Data;
+using CakeBoss.Backend.Shared;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace CakeBoss.Backend.Features.Management;
 
 /// <summary>
-/// Casos de uso da dona no painel (o lado dela, como o <c>OrderService</c> é o do cliente): ver os pedidos e abrir cada um.
+/// Casos de uso da dona no painel (o lado dela, como o <c>OrderService</c> é o do cliente): ver os pedidos, abrir cada um
+/// e conduzi-lo pelo ciclo (aprovar, recusar, confirmar o sinal, concluir, cancelar).
 /// Quem protege o acesso é o login do frontend; este serviço não sabe quem está chamando.
+/// As ações lançam <see cref="DomainException"/>, com mensagem em português, quando não podem ser feitas.
 /// </summary>
-public class OrderManagementService(AppDbContext db)
+public class OrderManagementService(AppDbContext db, AvailabilityService availability, TimeProvider clock)
 {
+    private const string OccupiedSlotIndex = "UX_Orders_Occupied_Slot";
+
     /// <summary>Quantos pedidos já encerrados a lista traz. Os abertos vêm sempre todos.</summary>
     public const int DefaultClosedLimit = 50;
 
@@ -60,6 +67,84 @@ public class OrderManagementService(AppDbContext db)
 
         return order is null ? null : ToDetails(order);
     }
+
+    /// <summary>
+    /// Aprova o pedido com o que ela combinou com o cliente. Antes de gravar, confere de novo se o horário e os kg ainda cabem
+    /// (a agenda pode ter mudado desde o pedido); o pedido passa a ocupar o horário.
+    /// </summary>
+    public async Task ApproveAsync(ApproveOrderCommand command, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var order = await LoadForChangeAsync(command.OrderId, ct);
+
+        // Primeiro a entidade, que confere o status e os valores; só depois a agenda (um pedido que já foi aprovado
+        // apareceria como conflito com ele mesmo). Nada é gravado se alguma das duas recusar.
+        order.Approve(command.Price, command.DeliveryFee, command.DepositAmount, command.BlocksWholeDay, Now());
+
+        var conflict = await availability.FindApprovalConflictAsync(
+            order.Id, order.Date, order.Time, order.TotalWeightKg, command.BlocksWholeDay, ct);
+        if (conflict is not null)
+        {
+            // Descarta a alteração em memória: o pedido continua pendente, também para quem reutilizar este contexto.
+            db.ChangeTracker.Clear();
+            throw new DomainException(conflict);
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException exception) when (IsOccupiedSlotConflict(exception))
+        {
+            // Duas aprovações para o mesmo horário ao mesmo tempo: o índice único do banco barra a segunda.
+            db.ChangeTracker.Clear();
+            throw new DomainException("Outro pedido acabou de ocupar esse horário. Atualize a página e confira a agenda.");
+        }
+    }
+
+    public async Task RejectAsync(Guid orderId, string? reason, CancellationToken ct = default)
+    {
+        var order = await LoadForChangeAsync(orderId, ct);
+        order.Reject(reason, Now());
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>A dona recebeu o sinal por Pix.</summary>
+    public async Task ConfirmDepositAsync(Guid orderId, CancellationToken ct = default)
+    {
+        var order = await LoadForChangeAsync(orderId, ct);
+        order.ConfirmDeposit(Now());
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task CompleteAsync(Guid orderId, CancellationToken ct = default)
+    {
+        var order = await LoadForChangeAsync(orderId, ct);
+        order.Complete(Now());
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <param name="keepDeposit">Se a dona fica com o sinal (só vale se o sinal já foi pago).</param>
+    public async Task CancelAsync(Guid orderId, string? reason, bool keepDeposit, CancellationToken ct = default)
+    {
+        var order = await LoadForChangeAsync(orderId, ct);
+        order.Cancel(reason, keepDeposit, Now());
+        await db.SaveChangesAsync(ct);
+    }
+
+    private async Task<Order> LoadForChangeAsync(Guid orderId, CancellationToken ct) =>
+        await db.Orders.Include(o => o.Items).SingleOrDefaultAsync(o => o.Id == orderId, ct)
+        ?? throw new DomainException("Pedido não encontrado.");
+
+    private DateTime Now() => clock.GetUtcNow().UtcDateTime;
+
+    private static bool IsOccupiedSlotConflict(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: OccupiedSlotIndex
+        };
 
     private static OrderDetails ToDetails(Order order)
     {
