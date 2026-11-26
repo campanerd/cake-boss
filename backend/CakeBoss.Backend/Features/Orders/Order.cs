@@ -17,6 +17,9 @@ public class Order
     public static readonly OrderStatus[] SlotBlockingStatuses =
         [OrderStatus.Approved, OrderStatus.Confirmed, OrderStatus.Completed];
 
+    /// <summary>Tempo que o cliente tem, depois da aprovação, para pagar o sinal (regra combinada com a dona).</summary>
+    public static readonly TimeSpan DepositWindow = TimeSpan.FromHours(5);
+
     private const string CodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
 
     private readonly List<OrderItem> _items = [];
@@ -48,6 +51,12 @@ public class Order
     public decimal? DeliveryFee { get; private set; }
     public decimal? DepositAmount { get; private set; }
     public DateTime? DepositPaidAt { get; private set; }
+
+    /// <summary>
+    /// Até quando o sinal pode ser pago (UTC). Só existe se houver sinal a pagar; vazio nos pedidos sem sinal
+    /// e nos aprovados antes de o prazo existir, que por isso nunca expiram.
+    /// </summary>
+    public DateTime? DepositDueAt { get; private set; }
 
     /// <summary>A dona marca na aprovação os pedidos grandes ou de decoração complexa que ocupam o dia inteiro.</summary>
     public bool BlocksWholeDay { get; private set; }
@@ -153,6 +162,36 @@ public class Order
         DeliveryFee = deliveryFee;
         DepositAmount = depositAmount;
         BlocksWholeDay = blocksWholeDay;
+        DepositDueAt = DueAtFor(depositAmount, nowUtc);
+        Status = OrderStatus.Approved;
+        UpdatedAt = nowUtc;
+    }
+
+    /// <summary>Aprovado, com sinal a pagar e o prazo já vencido: o horário não deve mais ficar reservado.</summary>
+    public bool IsDepositOverdue(DateTime nowUtc) =>
+        Status == OrderStatus.Approved && DepositDueAt is { } due && due <= nowUtc;
+
+    /// <summary>O sinal não foi pago no prazo: o pedido expira e o horário volta a ficar livre.</summary>
+    public void Expire(DateTime nowUtc)
+    {
+        RequireStatus("expirar", OrderStatus.Approved);
+
+        if (!IsDepositOverdue(nowUtc))
+            throw new DomainException("O prazo para pagar o sinal ainda não venceu.");
+
+        Status = OrderStatus.Expired;
+        UpdatedAt = nowUtc;
+    }
+
+    /// <summary>
+    /// A dona reabre um pedido expirado (por exemplo, o Pix chegou depois do prazo): volta a Aprovado, com um novo prazo.
+    /// Quem chama confere antes se o horário ainda está livre.
+    /// </summary>
+    public void Reopen(DateTime nowUtc)
+    {
+        RequireStatus("reabrir", OrderStatus.Expired);
+
+        DepositDueAt = DueAtFor(DepositAmount ?? 0, nowUtc);
         Status = OrderStatus.Approved;
         UpdatedAt = nowUtc;
     }
@@ -200,6 +239,10 @@ public class Order
         GoogleEventId = TextCleaner.Clean(eventId, 200);
     }
 
+    // Sem sinal a pagar não há prazo: o pedido espera só a confirmação da dona.
+    private static DateTime? DueAtFor(decimal depositAmount, DateTime nowUtc) =>
+        depositAmount > 0 ? nowUtc + DepositWindow : null;
+
     private void RequireStatus(string action, params OrderStatus[] allowed)
     {
         if (!allowed.Contains(Status))
@@ -214,6 +257,7 @@ public class Order
         OrderStatus.Completed => "Concluído",
         OrderStatus.Rejected => "Recusado",
         OrderStatus.Cancelled => "Cancelado",
+        OrderStatus.Expired => "Expirado",
         _ => status.ToString()
     };
 }
