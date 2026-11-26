@@ -7,30 +7,35 @@
 
 /* 1. Tokens ---------------------------------------------------------------- */
 :root {
-    --cb-cream: #f7efe6;
-    --cb-cream-deep: #efe1d2;
-    --cb-card: #fffaf5;
-    --cb-blush: #f4d6cb;
-    --cb-chocolate: #5c3835;
-    --cb-chocolate-soft: #7a524d;
-    --cb-rose: #9e5858;
-    --cb-coral: #e8907a;
-    --cb-coral-strong: #b5563f;
-    --cb-line: #e6cfc2;
+    /* Paleta do logo da G&P: tons de roxo e lilás (os nomes são do tema antigo e ficaram, para não mexer em todo o arquivo).
+       cream = fundo da página; blush = lilás do logo; chocolate = texto; rose = títulos e links;
+       coral-strong = botões (o hover usa rose, mais escuro, e o clique usa chocolate); coral = detalhes e foco. */
+    --cb-cream: #f7edf9;
+    --cb-cream-deep: #eed9f2;
+    --cb-card: #fffbfe;
+    --cb-blush: #e2c0e6;
+    --cb-chocolate: #3b1c4a;
+    --cb-chocolate-soft: #6a4079;
+    --cb-rose: #62287c;
+    --cb-coral: #b27bc9;
+    --cb-coral-strong: #793698;
+    --cb-line: #dcc0e3;
 
     --cb-font-script: "Lobster", "Brush Script MT", cursive;
+    /* O nome "G&P" usa uma serifada elegante em itálico (combina com a caligrafia do logo e deixa o "&" legível). */
+    --cb-font-brand: "Cormorant Garamond", Georgia, "Times New Roman", serif;
     --cb-font-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
 
     --cb-radius: 18px;
-    --cb-shadow: 0 10px 30px rgba(92, 56, 53, 0.1);
+    --cb-shadow: 0 10px 30px rgba(59, 28, 74, 0.1);
     --cb-section-space: clamp(3rem, 7vw, 5.5rem);
 
     /* Bootstrap passa a usar a nossa paleta. */
     --bs-body-bg: var(--cb-cream);
     --bs-body-color: var(--cb-chocolate);
     --bs-body-font-family: var(--cb-font-body);
-    --bs-link-color-rgb: 158, 88, 88;
-    --bs-link-hover-color-rgb: 92, 56, 53;
+    --bs-link-color-rgb: 98, 40, 124;
+    --bs-link-hover-color-rgb: 59, 28, 74;
     --bs-border-color: var(--cb-line);
 }
 
@@ -90,12 +95,15 @@ svg {
 }
 
 /* 3. Cabeçalho ------------------------------------------------------------- */
+/* Faixa roxa com a versão branca da logo. As listras de toldo são bem sutis (branco a 7%) para não competir com
+   o nome e a logo. A sombra contorna também a borda ondulada. */
 .site-header {
-    --scallop-color: var(--cb-blush);
+    --scallop-color: var(--cb-coral-strong);
     position: relative;
     z-index: 10;
-    background-color: var(--cb-blush);
-    background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0 14px, transparent 14px 28px);
+    background-color: var(--cb-coral-strong);
+    background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 14px, transparent 14px 28px);
+    filter: drop-shadow(0 4px 8px rgba(59, 28, 74, 0.15));
 }
 
 .site-header .navbar {
@@ -104,21 +112,60 @@ svg {
 
 .brand {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
     line-height: 1.1;
     text-decoration: none;
 }
 
+/* A logo branca da G&P (PNG com fundo transparente) ao lado do nome. */
+.brand-logo {
+    flex: 0 0 auto;
+    width: auto;
+    height: 60px;
+}
+
+@media (max-width: 575.98px) {
+    .brand-logo {
+        height: 48px;
+    }
+}
+
+/* Celular e tablet: a marca encolhe (a frase quebra em duas linhas) e o botão do menu fica na mesma linha. */
+@media (max-width: 991.98px) {
+    .site-header .brand {
+        flex: 1 1 0;
+        min-width: 0;
+        margin-right: 0.75rem;
+    }
+
+    .brand-name {
+        font-size: 1.6rem;
+    }
+
+    .brand-tagline {
+        font-size: 0.78rem;
+    }
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .brand-name {
-    font-family: var(--cb-font-script);
-    font-size: clamp(1.6rem, 4vw, 2.1rem);
-    color: var(--cb-rose);
+    font-family: var(--cb-font-brand);
+    font-size: clamp(1.7rem, 4vw, 2.2rem);
+    font-style: italic;
+    font-weight: 700;
+    color: #fff;
 }
 
 .brand-tagline {
     font-size: 0.85rem;
     font-style: italic;
-    color: var(--cb-chocolate-soft);
+    color: var(--cb-cream-deep);
 }
 
 .site-header .nav-link {
@@ -135,7 +182,33 @@ svg {
 }
 
 .site-header .navbar-toggler {
-    border-color: rgba(92, 56, 53, 0.35);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* No desktop o menu fica sobre a faixa roxa: texto branco e o botão invertido (branco com letra roxa).
+   No celular o menu abre num cartão claro (abaixo) e mantém as cores normais. */
+@media (min-width: 992px) {
+    .site-header .nav-link {
+        color: #fff;
+    }
+
+    .site-header .nav-link:hover,
+    .site-header .nav-link:focus-visible {
+        color: var(--cb-blush);
+    }
+
+    .site-header .btn-cb {
+        --bs-btn-color: var(--cb-coral-strong);
+        --bs-btn-bg: #fff;
+        --bs-btn-border-color: #fff;
+        --bs-btn-hover-color: var(--cb-rose);
+        --bs-btn-hover-bg: var(--cb-blush);
+        --bs-btn-hover-border-color: var(--cb-blush);
+        --bs-btn-active-color: var(--cb-chocolate);
+        --bs-btn-active-bg: var(--cb-cream-deep);
+        --bs-btn-active-border-color: var(--cb-cream-deep);
+        box-shadow: 0 6px 16px rgba(59, 28, 74, 0.25);
+    }
 }
 
 @media (max-width: 991.98px) {
@@ -168,7 +241,7 @@ svg {
     --bs-btn-active-color: #fff;
     --bs-btn-active-bg: var(--cb-chocolate);
     --bs-btn-active-border-color: var(--cb-chocolate);
-    box-shadow: 0 6px 16px rgba(181, 86, 63, 0.25);
+    box-shadow: 0 6px 16px rgba(121, 54, 152, 0.25);
 }
 
 .btn-cb-outline {
@@ -219,7 +292,7 @@ svg {
     flex: 0 0 auto;
     width: clamp(36px, 8vw, 64px);
     height: 18px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 18'%3E%3Cpath d='M2 9h38c7 0 11-7 5-8s-7 8 0 10 14-1 17-2' fill='none' stroke='%23c58a7a' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='2.5' cy='9' r='2' fill='%23c58a7a'/%3E%3C/svg%3E") no-repeat center / contain;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 18'%3E%3Cpath d='M2 9h38c7 0 11-7 5-8s-7 8 0 10 14-1 17-2' fill='none' stroke='%23b27bc9' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='2.5' cy='9' r='2' fill='%23b27bc9'/%3E%3C/svg%3E") no-repeat center / contain;
 }
 
 .section-title::after {
@@ -251,8 +324,8 @@ svg {
 .hero {
     padding-block: clamp(3.5rem, 8vw, 6rem) clamp(2.5rem, 6vw, 4.5rem);
     background:
-        radial-gradient(circle at 85% 20%, rgba(232, 144, 122, 0.22), transparent 45%),
-        radial-gradient(circle at 10% 90%, rgba(244, 214, 203, 0.8), transparent 40%);
+        radial-gradient(circle at 85% 20%, rgba(178, 123, 201, 0.25), transparent 45%),
+        radial-gradient(circle at 10% 90%, rgba(226, 192, 230, 0.8), transparent 40%);
 }
 
 .hero-title {
@@ -285,29 +358,30 @@ svg {
     }
 }
 
+/* Círculo claro (sempre redondo) com a versão redonda da logo no centro. */
 .hero-art {
     position: relative;
-    max-width: 30rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 28rem;
+    aspect-ratio: 1;
     margin-inline: auto;
 }
 
 .hero-art::before {
     content: "";
     position: absolute;
-    inset: 8% 6% 4%;
+    inset: 0;
     background: var(--cb-card);
     border-radius: 50%;
     box-shadow: var(--cb-shadow);
 }
 
-.cake-art {
+.hero-logo {
     position: relative;
-    display: block;
-    width: 100%;
+    width: 82%;
     height: auto;
-    --cake-frosting: #fff6ee;
-    --cake-drip: #e59a86;
-    --cake-accent: #f2b8a8;
 }
 
 /* Passos do "como funciona". */
@@ -490,10 +564,19 @@ svg {
     background-size: 24px 14px;
 }
 
+.footer-logo {
+    display: block;
+    width: 180px;
+    height: auto;
+    margin-bottom: 1rem;
+}
+
 .footer-brand {
     margin-bottom: 0.25rem;
-    font-family: var(--cb-font-script);
-    font-size: 1.9rem;
+    font-family: var(--cb-font-brand);
+    font-size: 2.1rem;
+    font-style: italic;
+    font-weight: 700;
     color: var(--cb-blush);
 }
 
@@ -506,7 +589,7 @@ svg {
 }
 
 .footer-text {
-    color: rgba(247, 239, 230, 0.85);
+    color: rgba(247, 237, 249, 0.85);
 }
 
 .footer-links {
@@ -527,8 +610,8 @@ svg {
     margin: 2rem 0 0;
     padding-top: 1.25rem;
     font-size: 0.85rem;
-    color: rgba(247, 239, 230, 0.7);
-    border-top: 1px solid rgba(247, 239, 230, 0.2);
+    color: rgba(247, 237, 249, 0.7);
+    border-top: 1px solid rgba(247, 237, 249, 0.2);
 }
 
 /* Entrada do painel: pequena e sem destaque, só aparece de verdade para quem a procura. */
@@ -634,7 +717,7 @@ svg {
 .form-card .form-control:focus,
 .form-card .form-select:focus {
     border-color: var(--cb-coral);
-    box-shadow: 0 0 0 0.2rem rgba(232, 144, 122, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(178, 123, 201, 0.3);
 }
 
 .form-label {
@@ -667,7 +750,7 @@ svg {
 }
 
 .choice:has(input:checked) {
-    background: #fff3ee;
+    background: #f6e9fa;
     border-color: var(--cb-coral-strong);
 }
 
@@ -869,11 +952,11 @@ button.calendar-day:hover,
     }
 
     .form-card input[type="date"] {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239e5858' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2362287c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='3'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E");
     }
 
     .form-card input[type="time"] {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239e5858' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2362287c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
     }
 
     .form-card input[type="date"]::-webkit-calendar-picker-indicator,
@@ -1038,8 +1121,10 @@ button.calendar-day:hover,
 }
 
 .panel-brand-name {
-    font-family: var(--cb-font-script);
-    font-size: 1.35rem;
+    font-family: var(--cb-font-brand);
+    font-size: 1.5rem;
+    font-style: italic;
+    font-weight: 700;
     color: var(--cb-rose);
 }
 
@@ -1185,7 +1270,7 @@ button.calendar-day:hover,
 }
 
 .status-pill.status-approved {
-    background: #a8742f;
+    background: #b0457f;
 }
 
 .status-pill.status-confirmed,

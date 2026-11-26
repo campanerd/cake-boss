@@ -6,14 +6,19 @@
     var orderUrl = site.OrdersEnabled ? Url.Page("/Orders/New") : "/#como-funciona";
 }
 <header class="site-header scallop-bottom">
-    <nav class="navbar navbar-expand-lg" aria-label="Menu principal">
+    @* data-bs-theme="dark": o ícone do menu (celular) fica branco sobre a faixa roxa. *@
+    <nav class="navbar navbar-expand-lg" data-bs-theme="dark" aria-label="Menu principal">
         <div class="container">
             <a class="brand" asp-page="/Index">
-                <span class="brand-name">@site.Name</span>
-                @if (!string.IsNullOrWhiteSpace(site.Tagline))
-                {
-                    <span class="brand-tagline">@site.Tagline</span>
-                }
+                @* alt vazio: o nome ao lado já diz o que é; a imagem é só a marca. *@
+                <img class="brand-logo" src="~/img/logo-white.png" alt="" width="90" height="60" />
+                <span class="brand-text">
+                    <span class="brand-name">@site.Name</span>
+                    @if (!string.IsNullOrWhiteSpace(site.Tagline))
+                    {
+                        <span class="brand-tagline">@site.Tagline</span>
+                    }
+                </span>
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
