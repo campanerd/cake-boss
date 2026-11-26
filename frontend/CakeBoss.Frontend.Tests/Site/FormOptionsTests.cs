@@ -51,6 +51,7 @@ public class FormOptionsTests
     [InlineData(OrderStatus.Completed)]
     [InlineData(OrderStatus.Rejected)]
     [InlineData(OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Expired)]
     public void EveryStatus_HasAPortugueseLabelAndDescription(OrderStatus status)
     {
         Assert.NotEqual(status.ToString(), FormOptions.StatusLabel(status));
@@ -76,6 +77,7 @@ public class FormOptionsTests
     [InlineData(OrderStatus.Completed)]
     [InlineData(OrderStatus.Rejected)]
     [InlineData(OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Expired)]
     public void EveryStatus_HasAShortPortugueseLabelForThePanel(OrderStatus status)
     {
         var label = FormOptions.PanelStatusLabel(status);
@@ -87,6 +89,6 @@ public class FormOptionsTests
     [Fact]
     public void StatusTests_CoverEveryStatus()
     {
-        Assert.Equal(6, Enum.GetValues<OrderStatus>().Length);
+        Assert.Equal(7, Enum.GetValues<OrderStatus>().Length);
     }
 }

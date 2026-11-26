@@ -4,6 +4,7 @@ namespace CakeBoss.Backend.Features.Orders;
 /// Ciclo de vida do pedido:
 /// Pending → Approved (aguardando sinal) → Confirmed (sinal pago) → Completed.
 /// Pending também pode virar Rejected; Pending/Approved/Confirmed podem virar Cancelled.
+/// Approved vira Expired se o sinal não for pago no prazo, e a dona pode reabri-lo (volta a Approved).
 /// </summary>
 public enum OrderStatus
 {
@@ -12,7 +13,8 @@ public enum OrderStatus
     Confirmed,
     Completed,
     Rejected,
-    Cancelled
+    Cancelled,
+    Expired
 }
 
 public enum DeliveryType

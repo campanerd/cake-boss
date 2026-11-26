@@ -36,7 +36,7 @@ public class IndexModel(OrderManagementService orders) : PageModel
             list.Where(o => o.Status == OrderStatus.Pending).ToList(),
             list.Where(o => o.Status == OrderStatus.Approved).ToList(),
             list.Where(o => o.Status == OrderStatus.Confirmed).ToList(),
-            list.Where(o => o.Status is OrderStatus.Completed or OrderStatus.Rejected or OrderStatus.Cancelled).ToList());
+            list.Where(o => o.Status is OrderStatus.Completed or OrderStatus.Rejected or OrderStatus.Cancelled or OrderStatus.Expired).ToList());
     }
 
     public sealed record OrderGroups(

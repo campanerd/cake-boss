@@ -20,7 +20,8 @@ public class IndexModelTests
             Item("CONF1", OrderStatus.Confirmed),
             Item("DONE1", OrderStatus.Completed),
             Item("REJE1", OrderStatus.Rejected),
-            Item("CANC1", OrderStatus.Cancelled)
+            Item("CANC1", OrderStatus.Cancelled),
+            Item("EXPI1", OrderStatus.Expired)
         };
 
         var groups = IndexModel.GroupByStage(items);
@@ -28,7 +29,7 @@ public class IndexModelTests
         Assert.Equal(["PEND1"], groups.Pending.Select(o => o.Code));
         Assert.Equal(["APPR1"], groups.WaitingDeposit.Select(o => o.Code));
         Assert.Equal(["CONF1"], groups.Confirmed.Select(o => o.Code));
-        Assert.Equal(["DONE1", "REJE1", "CANC1"], groups.Closed.Select(o => o.Code));
+        Assert.Equal(["DONE1", "REJE1", "CANC1", "EXPI1"], groups.Closed.Select(o => o.Code));
     }
 
     // A ordem (a data mais próxima primeiro, os encerrados do mais recente) vem do backend: aqui ela não pode mudar.

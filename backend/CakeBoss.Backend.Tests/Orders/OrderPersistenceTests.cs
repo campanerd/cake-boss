@@ -35,6 +35,10 @@ public class OrderPersistenceTests
             case OrderStatus.Cancelled:
                 order.Cancel(null, false, TestData.NowUtc);
                 break;
+            case OrderStatus.Expired:
+                order.Approve(100m, 0m, 50m, false, TestData.NowUtc);
+                order.Expire(TestData.NowUtc.AddHours(6));
+                break;
         }
 
         return order;
@@ -72,6 +76,7 @@ public class OrderPersistenceTests
         Assert.Equal(250m, loaded.Price);
         Assert.Equal(15m, loaded.DeliveryFee);
         Assert.Equal(100m, loaded.DepositAmount);
+        Assert.Equal(TestData.NowUtc.AddHours(5), loaded.DepositDueAt);
         Assert.True(loaded.BlocksWholeDay);
         Assert.Equal(order.Customer.Phone, loaded.Customer.Phone);
 
@@ -117,6 +122,7 @@ public class OrderPersistenceTests
     [InlineData(OrderStatus.Pending)]
     [InlineData(OrderStatus.Rejected)]
     [InlineData(OrderStatus.Cancelled)]
+    [InlineData(OrderStatus.Expired)] // é assim que o horário de um pedido sem sinal volta a ficar livre
     public async Task OrdersThatDoNotBlockTheSlot_CanSitNextToAnApprovedOne(OrderStatus otherStatus)
     {
         await using var database = await TestDatabase.CreateAsync();

@@ -432,4 +432,162 @@ public class OrderTests
 
         Assert.Equal(order.Code, Order.NormalizeCode(order.Code));
     }
+
+    // ---------- Prazo do sinal ----------
+
+    private static DateTime Due(Order order) => order.DepositDueAt!.Value;
+
+    [Fact]
+    public void DepositWindow_IsFiveHours()
+    {
+        Assert.Equal(TimeSpan.FromHours(5), Order.DepositWindow);
+    }
+
+    [Fact]
+    public void Approve_WithDeposit_SetsTheDeadlineFiveHoursAfterTheApproval()
+    {
+        var order = TestData.NewOrder();
+        var approvedAt = TestData.NowUtc.AddHours(1);
+
+        order.Approve(150m, 0m, 50m, false, approvedAt);
+
+        Assert.Equal(approvedAt.AddHours(5), order.DepositDueAt);
+    }
+
+    // Sem sinal a pagar não há prazo: senão um pedido sem sinal expiraria sozinho.
+    [Fact]
+    public void Approve_WithoutDeposit_HasNoDeadline()
+    {
+        var order = TestData.NewOrder();
+
+        order.Approve(150m, 0m, 0m, false, TestData.NowUtc);
+
+        Assert.Null(order.DepositDueAt);
+        Assert.False(order.IsDepositOverdue(TestData.NowUtc.AddDays(30)));
+    }
+
+    [Fact]
+    public void IsDepositOverdue_IsTrueOnlyFromTheDeadlineOn()
+    {
+        var order = TestData.NewApprovedOrder();
+
+        Assert.False(order.IsDepositOverdue(Due(order).AddSeconds(-1)));
+        Assert.True(order.IsDepositOverdue(Due(order)));
+        Assert.True(order.IsDepositOverdue(Due(order).AddHours(1)));
+    }
+
+    [Fact]
+    public void IsDepositOverdue_IsFalseOnceTheDepositIsPaid()
+    {
+        var order = TestData.NewApprovedOrder();
+        order.ConfirmDeposit(Due(order).AddMinutes(-1));
+
+        Assert.False(order.IsDepositOverdue(Due(order).AddDays(1)));
+    }
+
+    [Fact]
+    public void Expire_AfterTheDeadline_MovesToExpired()
+    {
+        var order = TestData.NewApprovedOrder();
+        var now = Due(order).AddMinutes(1);
+
+        order.Expire(now);
+
+        Assert.Equal(OrderStatus.Expired, order.Status);
+        Assert.Equal(now, order.UpdatedAt);
+    }
+
+    [Fact]
+    public void Expire_BeforeTheDeadline_Throws()
+    {
+        var order = TestData.NewApprovedOrder();
+
+        var exception = Assert.Throws<DomainException>(() => order.Expire(Due(order).AddMinutes(-1)));
+
+        Assert.Equal("O prazo para pagar o sinal ainda não venceu.", exception.Message);
+        Assert.Equal(OrderStatus.Approved, order.Status);
+    }
+
+    [Fact]
+    public void Expire_AnOrderWithoutDeadline_Throws()
+    {
+        var order = TestData.NewOrder();
+        order.Approve(150m, 0m, 0m, false, TestData.NowUtc);
+
+        Assert.Throws<DomainException>(() => order.Expire(TestData.NowUtc.AddDays(30)));
+    }
+
+    [Fact]
+    public void Expire_WhenNotApproved_Throws()
+    {
+        var late = TestData.NowUtc.AddDays(30);
+
+        Assert.Throws<DomainException>(() => TestData.NewOrder().Expire(late)); // pendente
+        Assert.Throws<DomainException>(() => TestData.NewConfirmedOrder().Expire(late)); // sinal já pago
+    }
+
+    [Fact]
+    public void Expired_DoesNotBlockTheSlot()
+    {
+        Assert.DoesNotContain(OrderStatus.Expired, Order.SlotBlockingStatuses);
+    }
+
+    [Fact]
+    public void Reopen_FromExpired_GoesBackToApprovedWithANewDeadline()
+    {
+        var order = TestData.NewApprovedOrder();
+        order.Expire(Due(order).AddMinutes(1));
+        var reopenedAt = TestData.NowUtc.AddDays(1);
+
+        order.Reopen(reopenedAt);
+
+        Assert.Equal(OrderStatus.Approved, order.Status);
+        Assert.Equal(reopenedAt.AddHours(5), order.DepositDueAt);
+        Assert.Equal(reopenedAt, order.UpdatedAt);
+        Assert.Equal(50m, order.DepositAmount); // o que foi combinado continua valendo
+    }
+
+    [Fact]
+    public void Reopen_WhenNotExpired_Throws()
+    {
+        Assert.Throws<DomainException>(() => TestData.NewOrder().Reopen(TestData.NowUtc));
+        Assert.Throws<DomainException>(() => TestData.NewApprovedOrder().Reopen(TestData.NowUtc));
+    }
+
+    // Um pedido que expirou está encerrado: só reabrir o tira daí.
+    [Fact]
+    public void Expired_CannotBeConfirmedCompletedCancelledOrRejected()
+    {
+        var order = TestData.NewApprovedOrder();
+        order.Expire(Due(order).AddMinutes(1));
+        var now = TestData.NowUtc.AddDays(1);
+
+        Assert.Throws<DomainException>(() => order.ConfirmDeposit(now));
+        Assert.Throws<DomainException>(() => order.Complete(now));
+        Assert.Throws<DomainException>(() => order.Cancel("Desistiu", false, now));
+        Assert.Throws<DomainException>(() => order.Reject("Não", now));
+        Assert.Throws<DomainException>(() => order.Approve(100m, 0m, 0m, false, now));
+    }
+
+    // A palavra da dona sobre o Pix recebido vale mais que o relógio: enquanto o pedido não foi fechado, confirmar o sinal funciona.
+    [Fact]
+    public void ConfirmDeposit_AfterTheDeadlineButBeforeExpiring_StillWorks()
+    {
+        var order = TestData.NewApprovedOrder();
+
+        order.ConfirmDeposit(Due(order).AddHours(2));
+
+        Assert.Equal(OrderStatus.Confirmed, order.Status);
+    }
+
+    [Fact]
+    public void ExpiredStatus_HasAMessageInPortuguese()
+    {
+        var order = TestData.NewApprovedOrder();
+        order.Expire(Due(order).AddMinutes(1));
+
+        var exception = Assert.Throws<DomainException>(() => order.Complete(TestData.NowUtc));
+
+        Assert.Contains("Expirado", exception.Message);
+    }
 }

@@ -40,6 +40,7 @@ public static class FormOptions
         OrderStatus.Completed => "Concluído",
         OrderStatus.Rejected => "Recusado",
         OrderStatus.Cancelled => "Cancelado",
+        OrderStatus.Expired => "Prazo do sinal encerrado",
         _ => status.ToString()
     };
 
@@ -52,6 +53,7 @@ public static class FormOptions
         OrderStatus.Completed => "Pedido entregue. Obrigada pela preferência!",
         OrderStatus.Rejected => "Infelizmente a confeiteira não pôde aceitar este pedido.",
         OrderStatus.Cancelled => "Este pedido foi cancelado.",
+        OrderStatus.Expired => "O prazo para pagar o sinal acabou e o horário foi liberado. Se ainda quiser este bolo, fale com a confeiteira pelo WhatsApp.",
         _ => ""
     };
 
@@ -74,6 +76,7 @@ public static class FormOptions
         OrderStatus.Completed => "Concluído",
         OrderStatus.Rejected => "Recusado",
         OrderStatus.Cancelled => "Cancelado",
+        OrderStatus.Expired => "Expirado",
         _ => status.ToString()
     };
 

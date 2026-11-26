@@ -52,6 +52,7 @@ internal class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         // Garante no BANCO que dois pedidos ativos nunca ocupem o mesmo horário, mesmo com
         // duas aprovações simultâneas. Mantenha a lista em sincronia com Order.SlotBlockingStatuses.
+        // Expired fica de fora de propósito: é assim que o horário de um pedido sem sinal volta a ficar livre.
         b.HasIndex(o => new { o.Date, o.Time })
             .IsUnique()
             .HasFilter("\"Status\" IN ('Approved', 'Confirmed', 'Completed')")
