@@ -18,6 +18,7 @@ public sealed record OrderListItem(
 /// <summary>
 /// Tudo o que a dona vê ao abrir um pedido. Diferente da página do cliente, mostra os dados de contato,
 /// e traz a mensagem de WhatsApp pronta para ela negociar.
+/// <c>DepositDueAt</c> é o fim do prazo do sinal, em UTC (<c>BrazilTime.FromUtc</c> converte para mostrar); vazio se não há prazo.
 /// </summary>
 public sealed record OrderDetails(
     Guid Id,
@@ -43,6 +44,7 @@ public sealed record OrderDetails(
     string? CancellationReason,
     bool DepositKept,
     DateTime CreatedAt,
+    DateTime? DepositDueAt,
     WhatsAppMessage WhatsApp);
 
 /// <summary>O telefone vem só com dígitos (DDD e número, sem o 55).</summary>

@@ -82,7 +82,8 @@ public class OrderService(AppDbContext db, AvailabilityService availability, Tim
             approved ? order.RemainingAmount : null,
             order.DepositPaidAt is not null,
             order.RejectionReason,
-            order.CreatedAt);
+            order.CreatedAt,
+            order.Status == OrderStatus.Approved ? order.DepositDueAt : null);
     }
 
     private async Task<Order> BuildOrderAsync(PlaceOrderCommand command, CancellationToken ct)
