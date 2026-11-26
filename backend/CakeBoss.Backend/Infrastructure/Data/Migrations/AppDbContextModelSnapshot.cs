@@ -95,6 +95,9 @@ namespace CakeBoss.Backend.Infrastructure.Data.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
+                    b.Property<DateTime?>("DepositDueAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("DepositKept")
                         .HasColumnType("boolean");
 
