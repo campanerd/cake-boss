@@ -286,6 +286,25 @@ public class OrderServiceTests
         Assert.Equal(150m, view.Total);
         Assert.Equal(150m, view.RemainingAmount);
         Assert.False(view.DepositPaid);
+        Assert.Equal(TestData.NowUtc.AddHours(5), view.DepositDueAt);
+    }
+
+    // O cliente só precisa do prazo enquanto o pedido espera o sinal: antes e depois ele não vem.
+    [PostgresFact]
+    public async Task GetByCode_ShowsTheDepositDeadlineOnlyWhileWaitingForTheDeposit()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var service = CreateService(database.Db);
+        var placed = await service.PlaceOrderAsync(NewCommand());
+        var order = await database.Db.Orders.SingleAsync(o => o.Id == placed.Id);
+
+        Assert.Null((await service.GetByCodeAsync(placed.Code))!.DepositDueAt); // pendente
+
+        order.Approve(150m, 0m, 50m, false, TestData.NowUtc);
+        order.ConfirmDeposit(TestData.NowUtc.AddHours(1));
+        await database.Db.SaveChangesAsync();
+
+        Assert.Null((await service.GetByCodeAsync(placed.Code))!.DepositDueAt); // sinal pago
     }
 
     [PostgresFact]

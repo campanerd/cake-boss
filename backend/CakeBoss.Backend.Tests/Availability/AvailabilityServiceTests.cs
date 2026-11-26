@@ -219,6 +219,92 @@ public class AvailabilityServiceTests
         Assert.Null(reason);
     }
 
+    // ---------- Prazo do sinal ----------
+
+    /// <summary>Pedido aprovado com sinal a pagar, <paramref name="hoursAgo"/> horas antes de "agora" (prazo de 5 horas).</summary>
+    private static Order ApprovedWithDeposit(DateOnly date, int hour, double hoursAgo, decimal weightKg = 2m)
+    {
+        var order = TestData.NewOrder(date: date, time: new TimeOnly(hour, 0), items: [TestData.NewItem(weightKg)]);
+        order.Approve(100m, 0m, 50m, false, FridayNoon.UtcDateTime.AddHours(-hoursAgo));
+        return order;
+    }
+
+    [PostgresFact]
+    public async Task FreeTimes_IgnoresAnApprovedOrderWhoseDepositDeadlinePassed()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        database.Db.Orders.Add(ApprovedWithDeposit(Wednesday, 15, hoursAgo: 6)); // venceu há 1 hora
+        await database.Db.SaveChangesAsync();
+
+        var times = await CreateService(database).GetFreeTimesAsync(Wednesday);
+
+        Assert.Contains(new TimeOnly(15, 0), times);
+    }
+
+    [PostgresFact]
+    public async Task FreeTimes_StillBlocksAnApprovedOrderInsideTheDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        database.Db.Orders.Add(ApprovedWithDeposit(Wednesday, 15, hoursAgo: 2)); // ainda faltam 3 horas
+        await database.Db.SaveChangesAsync();
+
+        var times = await CreateService(database).GetFreeTimesAsync(Wednesday);
+
+        Assert.DoesNotContain(new TimeOnly(15, 0), times);
+    }
+
+    // O prazo só vale para quem ainda não pagou: com o sinal confirmado, o horário é dele para sempre.
+    [PostgresFact]
+    public async Task FreeTimes_StillBlocksAConfirmedOrderEvenAfterTheOriginalDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = ApprovedWithDeposit(Wednesday, 15, hoursAgo: 10);
+        order.ConfirmDeposit(FridayNoon.UtcDateTime.AddHours(-9));
+        database.Db.Orders.Add(order);
+        await database.Db.SaveChangesAsync();
+
+        var times = await CreateService(database).GetFreeTimesAsync(Wednesday);
+
+        Assert.DoesNotContain(new TimeOnly(15, 0), times);
+    }
+
+    [PostgresFact]
+    public async Task FreeTimes_AnOverdueOrderNoLongerCountsAgainstTheDailyCapacity()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        database.Db.Orders.Add(ApprovedWithDeposit(Wednesday, 14, hoursAgo: 6, weightKg: 19m)); // venceu: não conta os 19 kg
+        await database.Db.SaveChangesAsync();
+
+        var times = await CreateService(database).GetFreeTimesAsync(Wednesday, requestedKg: 5m);
+
+        Assert.NotEmpty(times);
+    }
+
+    [PostgresFact]
+    public async Task FreeTimes_AnExpiredOrderDoesNotBlock()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = ApprovedWithDeposit(Wednesday, 15, hoursAgo: 6);
+        order.Expire(FridayNoon.UtcDateTime);
+        database.Db.Orders.Add(order);
+        await database.Db.SaveChangesAsync();
+
+        Assert.Contains(new TimeOnly(15, 0), await CreateService(database).GetFreeTimesAsync(Wednesday));
+    }
+
+    [PostgresFact]
+    public async Task FindApprovalConflict_IgnoresAnOverdueOrderInTheSameSlot()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        database.Db.Orders.Add(ApprovedWithDeposit(Wednesday, 15, hoursAgo: 6));
+        await database.Db.SaveChangesAsync();
+
+        var reason = await CreateService(database)
+            .FindApprovalConflictAsync(Guid.NewGuid(), Wednesday, new TimeOnly(15, 0), 2m, false);
+
+        Assert.Null(reason);
+    }
+
     // O padrão exige 3 dias de antecedência: o sábado de amanhã não é oferecido ao cliente, mas a dona ainda pode aprovar.
     [PostgresFact]
     public async Task FindApprovalConflict_AllowsADateInsideTheMinimumLeadTime()

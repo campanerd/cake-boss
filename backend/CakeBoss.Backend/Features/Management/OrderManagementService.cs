@@ -23,7 +23,8 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
 
     /// <summary>
     /// Lista para o painel. Primeiro os pedidos em andamento (pendentes antes, depois aprovados e confirmados, do que está
-    /// mais perto para o mais longe); depois os encerrados (concluídos, recusados e cancelados), do mais recente para o mais antigo.
+    /// mais perto para o mais longe); depois os encerrados (concluídos, recusados, cancelados e expirados), do mais recente
+    /// para o mais antigo. Antes de listar, fecha os pedidos cujo prazo do sinal venceu (<see cref="ExpireOverdueAsync"/>).
     /// </summary>
     public async Task<IReadOnlyList<OrderListItem>> ListAsync(
         int closedLimit = DefaultClosedLimit,
@@ -31,8 +32,10 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
     {
         ArgumentOutOfRangeException.ThrowIfNegative(closedLimit);
 
+        await ExpireOverdueAsync(ct);
+
         OrderStatus[] open = [OrderStatus.Pending, OrderStatus.Approved, OrderStatus.Confirmed];
-        OrderStatus[] closed = [OrderStatus.Completed, OrderStatus.Rejected, OrderStatus.Cancelled];
+        OrderStatus[] closed = [OrderStatus.Completed, OrderStatus.Rejected, OrderStatus.Cancelled, OrderStatus.Expired];
 
         var openOrders = await db.Orders.AsNoTracking()
             .Where(o => open.Contains(o.Status))
@@ -70,11 +73,14 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
 
     /// <summary>
     /// Aprova o pedido com o que ela combinou com o cliente. Antes de gravar, confere de novo se o horário e os kg ainda cabem
-    /// (a agenda pode ter mudado desde o pedido); o pedido passa a ocupar o horário.
+    /// (a agenda pode ter mudado desde o pedido); o pedido passa a ocupar o horário e a ter 5 horas para o sinal.
     /// </summary>
     public async Task ApproveAsync(ApproveOrderCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command);
+
+        // Antes de tudo, fecha os aprovados vencidos: para o índice único do banco eles ainda ocupam o horário.
+        await ExpireOverdueAsync(ct);
 
         var order = await LoadForChangeAsync(command.OrderId, ct);
 
@@ -82,25 +88,44 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
         // apareceria como conflito com ele mesmo). Nada é gravado se alguma das duas recusar.
         order.Approve(command.Price, command.DeliveryFee, command.DepositAmount, command.BlocksWholeDay, Now());
 
-        var conflict = await availability.FindApprovalConflictAsync(
-            order.Id, order.Date, order.Time, order.TotalWeightKg, command.BlocksWholeDay, ct);
-        if (conflict is not null)
-        {
-            // Descarta a alteração em memória: o pedido continua pendente, também para quem reutilizar este contexto.
-            db.ChangeTracker.Clear();
-            throw new DomainException(conflict);
-        }
+        await SaveOccupyingSlotAsync(order, ct);
+    }
 
-        try
-        {
+    /// <summary>
+    /// Reabre um pedido que expirou (por exemplo, o Pix chegou depois do prazo). Só funciona se o horário e os kg ainda
+    /// estiverem livres; o pedido volta a Aprovado com um novo prazo de 5 horas.
+    /// </summary>
+    public async Task ReopenAsync(Guid orderId, CancellationToken ct = default)
+    {
+        await ExpireOverdueAsync(ct);
+
+        var order = await LoadForChangeAsync(orderId, ct);
+        order.Reopen(Now());
+
+        await SaveOccupyingSlotAsync(order, ct);
+    }
+
+    /// <summary>
+    /// Fecha os pedidos aprovados cujo prazo do sinal já venceu (viram Expirado) e devolve quantos foram. Roda ao listar, antes
+    /// de aprovar ou reabrir (e, depois, no /health). A disponibilidade já ignora esses pedidos por conta própria: isto só
+    /// arruma o registro e libera o índice único do banco. De propósito, NÃO roda ao confirmar o sinal: a palavra da dona
+    /// sobre o Pix recebido vale mais que o relógio, enquanto o pedido ainda não foi fechado.
+    /// </summary>
+    public async Task<int> ExpireOverdueAsync(CancellationToken ct = default)
+    {
+        var now = Now();
+
+        var overdue = await db.Orders
+            .Where(o => o.Status == OrderStatus.Approved && o.DepositDueAt != null && o.DepositDueAt <= now)
+            .ToListAsync(ct);
+
+        foreach (var order in overdue)
+            order.Expire(now);
+
+        if (overdue.Count > 0)
             await db.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException exception) when (IsOccupiedSlotConflict(exception))
-        {
-            // Duas aprovações para o mesmo horário ao mesmo tempo: o índice único do banco barra a segunda.
-            db.ChangeTracker.Clear();
-            throw new DomainException("Outro pedido acabou de ocupar esse horário. Atualize a página e confira a agenda.");
-        }
+
+        return overdue.Count;
     }
 
     public async Task RejectAsync(Guid orderId, string? reason, CancellationToken ct = default)
@@ -131,6 +156,32 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
         var order = await LoadForChangeAsync(orderId, ct);
         order.Cancel(reason, keepDeposit, Now());
         await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Confere a agenda e grava o pedido que passou a ocupar um horário (aprovado ou reaberto). Se houver conflito, descarta a
+    /// alteração em memória: o pedido continua como estava, também para quem reutilizar este contexto.
+    /// </summary>
+    private async Task SaveOccupyingSlotAsync(Order order, CancellationToken ct)
+    {
+        var conflict = await availability.FindApprovalConflictAsync(
+            order.Id, order.Date, order.Time, order.TotalWeightKg, order.BlocksWholeDay, ct);
+        if (conflict is not null)
+        {
+            db.ChangeTracker.Clear();
+            throw new DomainException(conflict);
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException exception) when (IsOccupiedSlotConflict(exception))
+        {
+            // Duas aprovações para o mesmo horário ao mesmo tempo: o índice único do banco barra a segunda.
+            db.ChangeTracker.Clear();
+            throw new DomainException("Outro pedido acabou de ocupar esse horário. Atualize a página e confira a agenda.");
+        }
     }
 
     private async Task<Order> LoadForChangeAsync(Guid orderId, CancellationToken ct) =>
@@ -176,6 +227,7 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
             order.CancellationReason,
             order.DepositKept,
             order.CreatedAt,
+            order.DepositDueAt,
             WhatsAppMessageBuilder.ForOrder(order));
     }
 }

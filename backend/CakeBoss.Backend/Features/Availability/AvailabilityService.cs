@@ -1,5 +1,6 @@
 using CakeBoss.Backend.Features.Orders;
 using CakeBoss.Backend.Infrastructure.Data;
+using CakeBoss.Backend.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace CakeBoss.Backend.Features.Availability;
@@ -8,8 +9,6 @@ namespace CakeBoss.Backend.Features.Availability;
 public class AvailabilityService(AppDbContext db, TimeProvider clock)
 {
     private const int MaxDaysPerQuery = 366;
-
-    private static readonly Lazy<TimeZoneInfo> BrazilTimeZone = new(ResolveBrazilTimeZone);
 
     /// <summary>Data de hoje no horário de Brasília.</summary>
     public DateOnly Today => DateOnly.FromDateTime(LocalNow());
@@ -75,10 +74,12 @@ public class AvailabilityService(AppDbContext db, TimeProvider clock)
         return AvailabilityCalculator.FindApprovalConflict(input, date, time, weightKg, blocksWholeDay);
     }
 
-    private DateTime LocalNow() => TimeZoneInfo.ConvertTime(clock.GetUtcNow(), BrazilTimeZone.Value).DateTime;
+    private DateTime LocalNow() => BrazilTime.Now(clock);
 
     private async Task<AvailabilityInput> LoadAsync(DateOnly from, DateOnly to, CancellationToken ct, Guid? ignoreOrderId = null)
     {
+        var nowUtc = clock.GetUtcNow().UtcDateTime;
+
         var openingHours = await db.OpeningHours.AsNoTracking().ToListAsync(ct);
         var settings = await db.Settings.AsNoTracking().SingleAsync(ct);
 
@@ -87,23 +88,15 @@ public class AvailabilityService(AppDbContext db, TimeProvider clock)
             .ToListAsync(ct);
 
         var blockingStatuses = Order.SlotBlockingStatuses;
+
+        // Pedido aprovado cujo prazo do sinal já venceu não segura mais o horário, mesmo que ainda não tenha sido fechado
+        // (ver Order.IsDepositOverdue): o horário volta ao calendário na hora exata, sem depender de nenhuma rotina.
         var occupied = await db.Orders.AsNoTracking()
             .Where(o => o.Date >= from && o.Date <= to && blockingStatuses.Contains(o.Status) && o.Id != ignoreOrderId)
+            .Where(o => !(o.Status == OrderStatus.Approved && o.DepositDueAt != null && o.DepositDueAt <= nowUtc))
             .Select(o => new OccupiedSlot(o.Date, o.Time, o.Items.Sum(i => i.WeightKg), o.BlocksWholeDay))
             .ToListAsync(ct);
 
         return new AvailabilityInput(LocalNow(), settings, openingHours, blocks, occupied);
-    }
-
-    private static TimeZoneInfo ResolveBrazilTimeZone()
-    {
-        foreach (var id in new[] { "America/Sao_Paulo", "E. South America Standard Time" })
-        {
-            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
-            catch (TimeZoneNotFoundException) { }
-            catch (InvalidTimeZoneException) { }
-        }
-
-        return TimeZoneInfo.Local;
     }
 }

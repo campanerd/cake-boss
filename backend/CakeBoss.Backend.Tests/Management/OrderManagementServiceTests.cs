@@ -14,11 +14,15 @@ namespace CakeBoss.Backend.Tests.Management;
 /// </summary>
 public class OrderManagementServiceTests
 {
-    private static OrderManagementService CreateService(TestDatabase database)
+    /// <param name="later">Quanto o relógio anda depois de <see cref="TestData.NowUtc"/>, quando os pedidos foram aprovados.</param>
+    private static OrderManagementService CreateService(TestDatabase database, TimeSpan? later = null)
     {
-        var clock = new FixedTimeProvider(TestData.NowUtc);
+        var clock = new FixedTimeProvider(TestData.NowUtc + (later ?? TimeSpan.Zero));
         return new OrderManagementService(database.Db, new AvailabilityService(database.Db, clock), clock);
     }
+
+    // Os pedidos aprovados dos testes têm 50 reais de sinal e foram aprovados em TestData.NowUtc: o prazo termina 5 horas depois.
+    private static readonly TimeSpan PastTheDeadline = TimeSpan.FromHours(6);
 
     // Simula a corrida de duas aprovações: a conferência da agenda passa, mas outro pedido toma o horário antes de gravar.
     private sealed class BlindAvailability(AppDbContext db, TimeProvider clock) : AvailabilityService(db, clock)
@@ -72,6 +76,10 @@ public class OrderManagementServiceTests
                 break;
             case OrderStatus.Cancelled:
                 order.Cancel("Desistiu", false, TestData.NowUtc);
+                break;
+            case OrderStatus.Expired:
+                order.Approve(150m, 0m, 50m, false, TestData.NowUtc);
+                order.Expire(TestData.NowUtc + PastTheDeadline);
                 break;
         }
 
@@ -520,6 +528,158 @@ public class OrderManagementServiceTests
         Assert.Equal(OrderStatus.Approved, (await Reload(database, second.Id)).Status);
     }
 
+    // ---------- Prazo do sinal ----------
+
+    [PostgresFact]
+    public async Task Approve_StartsTheFiveHourDeadline_WhenThereIsADeposit()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 15);
+        await Save(database, order);
+
+        await CreateService(database).ApproveAsync(Approval(order, deposit: 50m));
+
+        Assert.Equal(TestData.NowUtc.AddHours(5), (await Reload(database, order.Id)).DepositDueAt);
+    }
+
+    [PostgresFact]
+    public async Task Approve_WithoutDeposit_HasNoDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 15);
+        await Save(database, order);
+
+        await CreateService(database).ApproveAsync(Approval(order, deposit: 0m));
+
+        Assert.Null((await Reload(database, order.Id)).DepositDueAt);
+    }
+
+    [PostgresFact]
+    public async Task ExpireOverdue_ClosesOnlyApprovedOrdersPastTheDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var overdue = NewOrder(Day(26), 14, OrderStatus.Approved);
+        var pending = NewOrder(Day(26), 15);
+        var confirmed = NewOrder(Day(26), 16, OrderStatus.Confirmed);
+        var noDeposit = TestData.NewOrder(date: Day(26), time: new TimeOnly(17, 0));
+        noDeposit.Approve(150m, 0m, 0m, false, TestData.NowUtc);
+        await Save(database, overdue, pending, confirmed, noDeposit);
+
+        var closed = await CreateService(database, PastTheDeadline).ExpireOverdueAsync();
+
+        Assert.Equal(1, closed);
+        Assert.Equal(OrderStatus.Expired, (await Reload(database, overdue.Id)).Status);
+        Assert.Equal(OrderStatus.Pending, (await Reload(database, pending.Id)).Status);
+        Assert.Equal(OrderStatus.Confirmed, (await Reload(database, confirmed.Id)).Status);
+        Assert.Equal(OrderStatus.Approved, (await Reload(database, noDeposit.Id)).Status);
+    }
+
+    [PostgresFact]
+    public async Task ExpireOverdue_InsideTheDeadline_DoesNothing()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 14, OrderStatus.Approved);
+        await Save(database, order);
+
+        var closed = await CreateService(database, TimeSpan.FromHours(4)).ExpireOverdueAsync();
+
+        Assert.Equal(0, closed);
+        Assert.Equal(OrderStatus.Approved, (await Reload(database, order.Id)).Status);
+    }
+
+    [PostgresFact]
+    public async Task List_ClosesOverdueOrders_AndShowsThemAmongTheClosedOnes()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var overdue = NewOrder(Day(26), 14, OrderStatus.Approved);
+        var pending = NewOrder(Day(26), 15);
+        await Save(database, overdue, pending);
+
+        var list = await CreateService(database, PastTheDeadline).ListAsync();
+
+        Assert.Equal([pending.Id, overdue.Id], list.Select(o => o.Id));
+        Assert.Equal(OrderStatus.Expired, list.Single(o => o.Id == overdue.Id).Status);
+    }
+
+    // O índice único do banco ainda enxerga o aprovado vencido como ocupante: aprovar fecha os vencidos antes.
+    [PostgresFact]
+    public async Task Approve_CanTakeTheSlotOfAnOrderWhoseDepositDeadlinePassed()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var overdue = NewOrder(Day(26), 15, OrderStatus.Approved);
+        var order = NewOrder(Day(26), 15);
+        await Save(database, overdue, order);
+
+        await CreateService(database, PastTheDeadline).ApproveAsync(Approval(order));
+
+        Assert.Equal(OrderStatus.Approved, (await Reload(database, order.Id)).Status);
+        Assert.Equal(OrderStatus.Expired, (await Reload(database, overdue.Id)).Status);
+    }
+
+    // Decisão da dona: a palavra dela sobre o Pix recebido vale mais que o relógio, enquanto ninguém fechou o pedido.
+    [PostgresFact]
+    public async Task ConfirmDeposit_AfterTheDeadline_StillWorksWhileTheOrderIsNotClosed()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 15, OrderStatus.Approved);
+        await Save(database, order);
+
+        await CreateService(database, PastTheDeadline).ConfirmDepositAsync(order.Id);
+
+        Assert.Equal(OrderStatus.Confirmed, (await Reload(database, order.Id)).Status);
+    }
+
+    [PostgresFact]
+    public async Task Reopen_BringsAnExpiredOrderBack_WithANewDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 15, OrderStatus.Expired);
+        await Save(database, order);
+        var later = TimeSpan.FromHours(8);
+
+        await CreateService(database, later).ReopenAsync(order.Id);
+
+        var saved = await Reload(database, order.Id);
+        Assert.Equal(OrderStatus.Approved, saved.Status);
+        Assert.Equal(TestData.NowUtc + later + Order.DepositWindow, saved.DepositDueAt);
+    }
+
+    [PostgresFact]
+    public async Task Reopen_WhenTheSlotWasTakenInTheMeantime_ThrowsAndStaysExpired()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var expired = NewOrder(Day(26), 15, OrderStatus.Expired);
+        var other = NewOrder(Day(26), 15, OrderStatus.Confirmed);
+        await Save(database, expired, other);
+
+        var exception = await Assert.ThrowsAsync<DomainException>(() => CreateService(database).ReopenAsync(expired.Id));
+
+        Assert.Equal("Já existe um pedido aprovado nesse horário.", exception.Message);
+        Assert.Equal(OrderStatus.Expired, (await Reload(database, expired.Id)).Status);
+    }
+
+    [PostgresFact]
+    public async Task Reopen_AnOrderThatIsNotExpired_Throws()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 15, OrderStatus.Approved);
+        await Save(database, order);
+
+        await Assert.ThrowsAsync<DomainException>(() => CreateService(database).ReopenAsync(order.Id));
+    }
+
+    [PostgresFact]
+    public async Task Get_ShowsTheDepositDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var order = NewOrder(Day(26), 15, OrderStatus.Approved);
+        await Save(database, order);
+
+        var details = await CreateService(database).GetAsync(order.Id);
+
+        Assert.Equal(TestData.NowUtc.AddHours(5), details!.DepositDueAt);
+    }
+
     // ---------- Pedido inexistente ----------
 
     [PostgresFact]
@@ -535,7 +695,8 @@ public class OrderManagementServiceTests
             await Assert.ThrowsAsync<DomainException>(() => service.RejectAsync(id, null)),
             await Assert.ThrowsAsync<DomainException>(() => service.ConfirmDepositAsync(id)),
             await Assert.ThrowsAsync<DomainException>(() => service.CompleteAsync(id)),
-            await Assert.ThrowsAsync<DomainException>(() => service.CancelAsync(id, null, false))
+            await Assert.ThrowsAsync<DomainException>(() => service.CancelAsync(id, null, false)),
+            await Assert.ThrowsAsync<DomainException>(() => service.ReopenAsync(id))
         };
 
         Assert.All(exceptions, e => Assert.Equal("Pedido não encontrado.", e.Message));

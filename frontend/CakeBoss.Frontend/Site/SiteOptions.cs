@@ -23,8 +23,8 @@ public sealed class SiteOptions
     public string? InstagramUser { get; set; }
 
     /// <summary>
-    /// Liga o formulário de pedido. Em produção fica desligado até existir o painel da dona:
-    /// sem ele, um pedido de verdade cairia no banco sem ninguém para vê-lo.
+    /// Liga o formulário de pedido e a página de acompanhamento. O painel da dona (login, lista e aprovação) já existe e não
+    /// depende desta chave. Para desligar sem publicar de novo, defina a variável de ambiente Site__OrdersEnabled=false no Render.
     /// </summary>
     public bool OrdersEnabled { get; set; }
 
