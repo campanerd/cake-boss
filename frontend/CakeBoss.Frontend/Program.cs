@@ -1,5 +1,6 @@
 using CakeBoss.Backend;
 using CakeBoss.Backend.Features.Admin;
+using CakeBoss.Backend.Features.Management;
 using CakeBoss.Backend.Infrastructure.Health;
 using CakeBoss.Frontend.Commands;
 using CakeBoss.Frontend.Site;
@@ -98,18 +99,34 @@ app.MapGet("/version", (HttpContext context) =>
 
 // Chamado por um ping externo (cron-job.org ou UptimeRobot) a cada ~10 min: mantém o app acordado
 // e gera atividade no banco, evitando a pausa do Supabase por inatividade.
-app.MapGet("/health", async (DatabaseHealth health, ILogger<DatabaseHealth> logger, CancellationToken ct) =>
+// Aproveita para fechar os pedidos cujo prazo do sinal venceu, mesmo sem ninguém abrir o painel.
+app.MapGet("/health", async (
+    DatabaseHealth health,
+    OrderManagementService orders,
+    ILogger<DatabaseHealth> logger,
+    CancellationToken ct) =>
 {
     try
     {
         await health.CheckAsync(ct);
-        return Results.Ok("ok");
     }
     catch (Exception exception) when (exception is not OperationCanceledException)
     {
         logger.LogError(exception, "Database health check failed.");
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
     }
+
+    // Melhor esforço: se a limpeza falhar, o banco continua respondendo e o health check não cai por isso.
+    try
+    {
+        await orders.ExpireOverdueAsync(ct);
+    }
+    catch (Exception exception) when (exception is not OperationCanceledException)
+    {
+        logger.LogWarning(exception, "Could not expire overdue orders during the health check.");
+    }
+
+    return Results.Ok("ok");
 });
 
 app.Run();
