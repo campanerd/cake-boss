@@ -27,6 +27,7 @@
 
             @await Html.PartialAsync("_OrderGroup", ("Pendentes", groups.Pending))
             @await Html.PartialAsync("_OrderGroup", ("Aguardando o sinal", groups.WaitingDeposit))
+            @await Html.PartialAsync("_OrderGroup", ("Prazo do sinal vencido", groups.DepositExpired))
             @await Html.PartialAsync("_OrderGroup", ("Confirmados", groups.Confirmed))
             @await Html.PartialAsync("_OrderGroup", ("Encerrados", groups.Closed))
         </div>

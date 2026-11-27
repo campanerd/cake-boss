@@ -1310,3 +1310,24 @@ button.calendar-day:hover,
     --bs-btn-active-bg: #6f2419;
     --bs-btn-active-border-color: #6f2419;
 }
+
+/* Prazo do sinal: aviso ao cliente na página de acompanhamento e lembrete para a dona no detalhe do pedido. */
+.deposit-deadline {
+    margin: 1rem 0 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    text-align: left;
+    color: var(--cb-chocolate);
+    background: var(--cb-cream);
+    border-left: 4px solid var(--cb-coral-strong);
+    border-radius: 12px;
+}
+
+/* Na lista do painel, embaixo dos dados do pedido que aguarda o sinal. */
+.order-card-deadline {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cb-coral-strong);
+}

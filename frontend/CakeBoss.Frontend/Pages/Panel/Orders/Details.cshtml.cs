@@ -54,6 +54,10 @@ public class DetailsModel(OrderManagementService orders) : PageModel
     public Task<IActionResult> OnPostCompleteAsync(Guid id, CancellationToken ct) =>
         RunAsync(id, "Pedido concluído.", () => orders.CompleteAsync(id, ct), ct);
 
+    /// <summary>Pedido que expirou sem o sinal (por exemplo, o Pix chegou atrasado) volta a aguardar o sinal, com novo prazo.</summary>
+    public Task<IActionResult> OnPostReopenAsync(Guid id, CancellationToken ct) =>
+        RunAsync(id, "Pedido reaberto. Agora é confirmar o sinal.", () => orders.ReopenAsync(id, ct), ct);
+
     public Task<IActionResult> OnPostCancelAsync(Guid id, CancellationToken ct) =>
         RunAsync(id, "Pedido cancelado. O horário voltou a ficar livre.", () => orders.CancelAsync(id, Cancel.Reason, Cancel.KeepDeposit, ct), ct);
 
