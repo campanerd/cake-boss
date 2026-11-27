@@ -680,6 +680,21 @@ public class OrderManagementServiceTests
         Assert.Equal(TestData.NowUtc.AddHours(5), details!.DepositDueAt);
     }
 
+    // A lista do painel mostra "Sinal até ..." nos pedidos que aguardam o sinal.
+    [PostgresFact]
+    public async Task List_BringsTheDepositDeadline()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        var approved = NewOrder(Day(26), 15, OrderStatus.Approved);
+        var pending = NewOrder(Day(26), 16);
+        await Save(database, approved, pending);
+
+        var list = await CreateService(database).ListAsync();
+
+        Assert.Equal(TestData.NowUtc + Order.DepositWindow, list.Single(o => o.Id == approved.Id).DepositDueAt);
+        Assert.Null(list.Single(o => o.Id == pending.Id).DepositDueAt);
+    }
+
     // ---------- Pedido inexistente ----------
 
     [PostgresFact]
