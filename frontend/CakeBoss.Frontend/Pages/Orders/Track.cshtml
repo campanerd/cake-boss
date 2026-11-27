@@ -2,6 +2,7 @@
 @using CakeBoss.Backend.Features.Orders
 @using CakeBoss.Frontend.Site
 @model TrackModel
+@inject TimeProvider Clock
 @{
     var order = Model.Order;
     ViewData["Title"] = order is null ? "Acompanhar pedido" : $"Pedido {order.Code}";
@@ -47,6 +48,16 @@
                 <div class="form-card text-center">
                     <p class="status-badge @(cancelled ? "is-closed" : "")">@FormOptions.StatusLabel(order.Status)</p>
                     <p class="mb-0">@FormOptions.StatusDescription(order.Status)</p>
+
+                    @* O prazo só vem enquanto o pedido espera o sinal. O número de horas fica no backend (Order.DepositWindow): aqui só o horário-limite. *@
+                    @if (order.DepositDueAt is { } dueAt && order.DepositAmount is > 0)
+                    {
+                        <p class="deposit-deadline">
+                            Pague o sinal de <strong>@FormOptions.FormatMoney(order.DepositAmount.Value)</strong> por Pix até
+                            <strong>@FormOptions.FormatDeadline(dueAt, Clock.GetUtcNow().UtcDateTime)</strong>.
+                            Depois desse horário, a data volta a ficar livre para outros pedidos.
+                        </p>
+                    }
                     @if (order.Status == OrderStatus.Rejected && !string.IsNullOrWhiteSpace(order.RejectionReason))
                     {
                         <p class="form-hint mt-2 mb-0">Motivo: @order.RejectionReason</p>

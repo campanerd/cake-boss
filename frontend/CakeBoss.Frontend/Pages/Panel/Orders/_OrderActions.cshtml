@@ -1,6 +1,7 @@
 @using CakeBoss.Backend.Features.Orders
 @using CakeBoss.Frontend.Site
 @model CakeBoss.Frontend.Pages.Panel.Orders.DetailsModel
+@inject TimeProvider Clock
 @{
     var order = Model.Order!;
 }
@@ -79,8 +80,40 @@
                 <text>Não foi combinado sinal. Confirme para o pedido seguir.</text>
             }
         </p>
+        @if (order.DepositDueAt is { } dueAt)
+        {
+            <p class="deposit-deadline">
+                Prazo para o cliente pagar: <strong>@FormOptions.FormatDeadline(dueAt, Clock.GetUtcNow().UtcDateTime)</strong>.
+                Sem o sinal até lá, o pedido expira e o horário volta a ficar livre.
+            </p>
+        }
         <div class="action-row">
             <button type="submit" class="btn btn-cb">Confirmar sinal recebido</button>
+        </div>
+    </form>
+}
+
+@if (order.Status == OrderStatus.Expired)
+{
+    <form method="post" asp-page-handler="Reopen" asp-route-id="@order.Id" class="form-card">
+        <h2>Prazo do sinal vencido</h2>
+        <p>
+            @if (order.DepositDueAt is { } expiredAt)
+            {
+                <text>O prazo para o sinal acabou em <strong>@FormOptions.FormatDeadline(expiredAt, Clock.GetUtcNow().UtcDateTime)</strong></text>
+            }
+            else
+            {
+                <text>O prazo para o sinal acabou</text>
+            }
+            e o horário foi liberado na agenda.
+        </p>
+        <p class="form-hint">
+            Se o Pix chegou depois do prazo, reabra o pedido: ele volta a aguardar o sinal, com um novo prazo, e aí você confirma o sinal.
+            Só funciona se o horário ainda estiver livre.
+        </p>
+        <div class="action-row">
+            <button type="submit" class="btn btn-cb">Reabrir pedido</button>
         </div>
     </form>
 }

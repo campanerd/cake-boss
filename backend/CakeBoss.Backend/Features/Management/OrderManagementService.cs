@@ -44,7 +44,7 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
             .ThenBy(o => o.Time)
             .Select(o => new OrderListItem(
                 o.Id, o.Code, o.Status, o.Customer.Name, o.Date, o.Time, o.DeliveryType,
-                o.Items.Sum(i => i.WeightKg), o.CreatedAt))
+                o.Items.Sum(i => i.WeightKg), o.CreatedAt, o.DepositDueAt))
             .ToListAsync(ct);
 
         var closedOrders = await db.Orders.AsNoTracking()
@@ -54,7 +54,7 @@ public class OrderManagementService(AppDbContext db, AvailabilityService availab
             .Take(closedLimit)
             .Select(o => new OrderListItem(
                 o.Id, o.Code, o.Status, o.Customer.Name, o.Date, o.Time, o.DeliveryType,
-                o.Items.Sum(i => i.WeightKg), o.CreatedAt))
+                o.Items.Sum(i => i.WeightKg), o.CreatedAt, o.DepositDueAt))
             .ToListAsync(ct);
 
         return [.. openOrders, .. closedOrders];

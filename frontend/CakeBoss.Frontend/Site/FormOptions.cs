@@ -1,5 +1,6 @@
 using System.Globalization;
 using CakeBoss.Backend.Features.Orders;
+using CakeBoss.Backend.Shared;
 
 namespace CakeBoss.Frontend.Site;
 
@@ -59,6 +60,22 @@ public static class FormOptions
 
     /// <summary>Ex.: "sexta-feira, 27/11/2026". Feito à mão para não depender dos dados de cultura do servidor.</summary>
     public static string FormatDate(DateOnly date) => $"{WeekDays[(int)date.DayOfWeek]}, {date:dd/MM/yyyy}";
+
+    /// <summary>
+    /// Até quando o sinal pode ser pago, no horário de Brasília: "hoje às 18:30", "amanhã às 10:00" ou "sexta-feira, 28/11 às 10:00".
+    /// Os dois instantes vêm em UTC (como ficam no banco); "hoje" e "amanhã" são contados no horário de Brasília.
+    /// </summary>
+    public static string FormatDeadline(DateTime dueUtc, DateTime nowUtc)
+    {
+        var due = BrazilTime.FromUtc(dueUtc);
+        var today = DateOnly.FromDateTime(BrazilTime.FromUtc(nowUtc));
+        var dueDay = DateOnly.FromDateTime(due);
+        var time = due.ToString("HH:mm", CultureInfo.InvariantCulture);
+
+        if (dueDay == today) return $"hoje às {time}";
+        if (dueDay == today.AddDays(1)) return $"amanhã às {time}";
+        return $"{WeekDays[(int)due.DayOfWeek]}, {due.ToString("dd/MM", CultureInfo.InvariantCulture)} às {time}";
+    }
 
     /// <summary>Ex.: "R$ 1.234,50". Também feito à mão, pelo mesmo motivo.</summary>
     public static string FormatMoney(decimal value)

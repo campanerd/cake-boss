@@ -91,4 +91,28 @@ public class FormOptionsTests
     {
         Assert.Equal(7, Enum.GetValues<OrderStatus>().Length);
     }
+
+    // Os instantes vêm em UTC; Brasília é UTC-3. "Agora" é quinta-feira, 26/11/2026, 12:00 em Brasília.
+    private static readonly DateTime NowUtc = new(2026, 11, 26, 15, 0, 0, DateTimeKind.Utc);
+
+    [Theory]
+    [InlineData(2026, 11, 26, 21, 30, "hoje às 18:30")]
+    [InlineData(2026, 11, 27, 13, 0, "amanhã às 10:00")]
+    [InlineData(2026, 11, 28, 13, 0, "sábado, 28/11 às 10:00")]
+    public void FormatDeadline_UsesBrasiliaTime_AndSaysTodayOrTomorrow(int y, int mo, int d, int h, int mi, string expected)
+    {
+        var dueUtc = new DateTime(y, mo, d, h, mi, 0, DateTimeKind.Utc);
+
+        Assert.Equal(expected, FormOptions.FormatDeadline(dueUtc, NowUtc));
+    }
+
+    // Já é dia 27 em UTC, mas ainda é dia 26 em Brasília: "hoje" segue o horário de Brasília.
+    [Fact]
+    public void FormatDeadline_CountsTodayInBrasilia_NotInUtc()
+    {
+        var nowUtc = new DateTime(2026, 11, 27, 1, 0, 0, DateTimeKind.Utc); // 26/11, 22:00 em Brasília
+        var dueUtc = new DateTime(2026, 11, 27, 2, 30, 0, DateTimeKind.Utc); // 26/11, 23:30 em Brasília
+
+        Assert.Equal("hoje às 23:30", FormOptions.FormatDeadline(dueUtc, nowUtc));
+    }
 }

@@ -2,6 +2,7 @@
 @using CakeBoss.Backend.Features.Management
 @using CakeBoss.Frontend.Site
 @model (string Title, IReadOnlyList<OrderListItem> Items)
+@inject TimeProvider Clock
 
 @if (Model.Items.Count > 0)
 {
@@ -21,6 +22,10 @@
                             <span class="order-card-meta">
                                 @FormOptions.DeliveryLabel(order.DeliveryType) · <span class="nowrap">@FormOptions.FormatWeight(order.TotalWeightKg)</span> · <span class="nowrap">@order.Code</span>
                             </span>
+                            @if (order.Status == CakeBoss.Backend.Features.Orders.OrderStatus.Approved && order.DepositDueAt is { } dueAt)
+                            {
+                                <span class="order-card-deadline">Sinal até @FormOptions.FormatDeadline(dueAt, Clock.GetUtcNow().UtcDateTime)</span>
+                            }
                         </span>
                         <span class="status-pill status-@order.Status.ToString().ToLowerInvariant()">@FormOptions.PanelStatusLabel(order.Status)</span>
                     </a>
