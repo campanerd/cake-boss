@@ -2,7 +2,7 @@ using CakeBoss.Backend.Features.Notifications;
 using CakeBoss.Backend.Features.Orders;
 
 namespace CakeBoss.Backend.Features.Management;
-
+/// <summary>Uma linha da lista de pedidos do painel. <c>DepositDueAt</c> é o fim do prazo do sinal (UTC), se houver.</summary>
 /// <summary>Uma linha da lista de pedidos do painel.</summary>
 public sealed record OrderListItem(
     Guid Id,
@@ -13,7 +13,8 @@ public sealed record OrderListItem(
     TimeOnly Time,
     DeliveryType DeliveryType,
     decimal TotalWeightKg,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    DateTime? DepositDueAt);
 
 /// <summary>
 /// Tudo o que a dona vê ao abrir um pedido. Diferente da página do cliente, mostra os dados de contato,
